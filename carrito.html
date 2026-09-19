@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Revisa tu carrito de Coffee-NoteBook CESDE.">
+  <title>Mi carrito | Coffee-NoteBook CESDE</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="site-header"><div class="container header-inner"><a class="brand" href="catalogo.html" aria-label="Coffee-NoteBook CESDE, catálogo"><span class="brand-mark" aria-hidden="true">CN</span><span>Coffee-NoteBook <strong>CESDE</strong></span></a><div class="header-actions"><span class="logged-user" id="loggedUser">Hola, <strong id="loggedUserName">usuario</strong></span><button class="button button--ghost button--small" id="logoutButton" type="button">Cerrar sesión</button></div></div></header>
+  <main class="container page-content">
+    <div class="breadcrumb"><a href="catalogo.html">Catálogo</a><span aria-hidden="true">/</span><span>Mi carrito</span></div>
+    <div class="page-title-row"><div><p class="eyebrow">Tu selección</p><h1>Mi carrito</h1></div><span class="cart-counter" id="cartCount">0 productos</span></div>
+    <section class="cart-layout" aria-label="Resumen del carrito">
+      <div class="table-wrap">
+        <table class="cart-table"><caption class="sr-only">Productos seleccionados en el carrito</caption><thead><tr><th scope="col">Producto</th><th scope="col">Precio</th><th scope="col">Cantidad</th><th scope="col">Subtotal</th><th scope="col"><span class="sr-only">Acción</span></th></tr></thead><tbody id="cartItems"><tr class="empty-row"><td colspan="5"><span class="empty-icon" aria-hidden="true">☕</span><strong>Tu carrito está esperando algo rico</strong><span>Agrega productos desde el catálogo.</span></td></tr></tbody></table>
+      </div>
+      <aside class="summary-card"><h2>Resumen de compra</h2><div class="summary-line"><span>Subtotal</span><strong id="subtotal">$0</strong></div><div class="summary-line"><span>Entrega</span><strong id="deliveryCost">$0</strong></div><div class="summary-total"><span>Total</span><strong id="total">$0</strong></div><a class="button button--primary button--full" id="checkoutButton" href="pago.html">Continuar al pago <span aria-hidden="true">→</span></a><p class="secure-note">⌁ Compra segura y protegida</p></aside>
+    </section>
+    <a class="back-link" href="catalogo.html">← Seguir comprando</a>
+  </main>
+  <footer class="site-footer"><div class="container footer-inner"><p>© 2026 Coffee-NoteBook CESDE</p><nav aria-label="Enlaces del pie de página"><a href="#redes">Redes</a><a href="#legal">Legal</a><a href="mailto:contacto@coffee-notebook.co">Contacto</a></nav></div></footer>
+</body>
+</html>

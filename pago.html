@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Completa el pago de tu orden en Coffee-NoteBook CESDE.">
+  <title>Pago | Coffee-NoteBook CESDE</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="site-header"><div class="container header-inner"><a class="brand" href="catalogo.html" aria-label="Coffee-NoteBook CESDE, catálogo"><span class="brand-mark" aria-hidden="true">CN</span><span>Coffee-NoteBook <strong>CESDE</strong></span></a><div class="header-actions"><span class="logged-user" id="loggedUser">Hola, <strong id="loggedUserName">usuario</strong></span><button class="button button--ghost button--small" id="logoutButton" type="button">Cerrar sesión</button></div></div></header>
+  <main class="container page-content narrow-content">
+    <div class="breadcrumb"><a href="carrito.html">Carrito</a><span aria-hidden="true">/</span><span>Pago</span></div>
+    <div class="page-title-row"><div><p class="eyebrow">Último paso</p><h1>Confirma tu pedido</h1></div><div class="customer-chip">Cliente: <strong id="paymentCustomerName">Cargando...</strong><span id="paymentCustomerId"></span></div></div>
+    <form class="payment-layout payment-layout--single" id="paymentForm">
+      <section class="payment-panel"><h2>Método de pago</h2><fieldset class="payment-options"><legend class="sr-only">Selecciona un método de pago</legend><label class="payment-option"><input id="cashOnDelivery" name="method" type="radio" value="contra entrega" checked><span class="option-icon" aria-hidden="true">♧</span><span><strong>Contra entrega</strong><small>Pagas al recibir tu pedido</small></span></label><label class="payment-option"><input id="card" name="method" type="radio" value="tarjeta"><span class="option-icon" aria-hidden="true">▣</span><span><strong>Tarjeta</strong><small>Pago seguro en línea</small></span></label></fieldset>
+        <div class="card-fields" id="cardFields" hidden><div class="field-group"><label for="cardNumber">Número de tarjeta</label><input id="cardNumber" name="cardNumber" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000"></div><div class="form-grid form-grid--two"><div class="field-group"><label for="cardExpiration">Vencimiento</label><input id="cardExpiration" name="cardExpiration" type="text" autocomplete="cc-exp" placeholder="MM/AA"></div><div class="field-group"><label for="cardCvv">CVV</label><input id="cardCvv" name="cardCvv" type="password" inputmode="numeric" autocomplete="cc-csc" placeholder="123"></div></div><div class="field-group"><label for="cardName">Nombre en la tarjeta</label><input id="cardName" name="cardName" type="text" autocomplete="cc-name" placeholder="Nombre completo"></div></div>
+        <p id="paymentMessage" class="form-message" role="status" aria-live="polite"></p><button class="button button--primary button--full" type="submit">Confirmar pago <span aria-hidden="true">→</span></button>
+      </section>
+    </form>
+  </main>
+  <footer class="site-footer"><div class="container footer-inner"><p>© 2026 Coffee-NoteBook CESDE</p><nav aria-label="Enlaces del pie de página"><a href="#redes">Redes</a><a href="#legal">Legal</a><a href="mailto:contacto@coffee-notebook.co">Contacto</a></nav></div></footer>
+  <script src="./js/js-conexion-snippet.js"></script>
+</body>
+</html>

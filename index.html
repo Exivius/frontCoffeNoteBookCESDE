@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Inicio de sesión de Coffee-NoteBook CESDE.">
+  <title>Iniciar sesión | Coffee-NoteBook CESDE</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="auth-page">
+  <main class="auth-shell">
+    <section class="auth-panel" aria-labelledby="login-title">
+      <header class="auth-header">
+        <a class="brand brand--auth" href="index.html" aria-label="Coffee-NoteBook CESDE, inicio">
+          <span class="brand-mark" aria-hidden="true">CN</span>
+          <span>Coffee-NoteBook <strong>CESDE</strong></span>
+        </a>
+      </header>
+      <div class="auth-copy">
+        <p class="eyebrow">Pausa, sabor y comunidad</p>
+        <h1 id="login-title">Bienvenido de nuevo</h1>
+        <p>Ingresa para pedir tus favoritos y disfrutar tu momento de café.</p>
+      </div>
+      <form class="form-stack" id="loginForm" novalidate>
+        <div class="field-group">
+          <label for="userName">Usuario</label>
+          <input id="userName" name="userName" type="text" autocomplete="username" placeholder="Tu nombre de usuario" required>
+        </div>
+        <div class="field-group">
+          <label for="password">Contraseña</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Mínimo 8 caracteres" required>
+        </div>
+        <p id="loginError" class="form-message form-message--error" role="alert" aria-live="polite"></p>
+        <button class="button button--primary button--full" type="submit">Iniciar sesión <span aria-hidden="true">→</span></button>
+      </form>
+      <p class="auth-switch">¿Aún no tienes cuenta? <a href="registro.html">Crear usuario</a></p>
+    </section>
+    <aside class="auth-visual" aria-label="Ambiente de cafetería">
+      <div class="visual-stamp">Desde 2026</div>
+      <div class="visual-content">
+        <span class="visual-icon" aria-hidden="true">☕</span>
+        <p class="eyebrow">Cafetería estudiantil</p>
+        <h2>Tu pausa también hace parte de la clase.</h2>
+      </div>
+    </aside>
+  </main>
+  <footer class="site-footer"><div class="container footer-inner"><p>© 2026 Coffee-NoteBook CESDE</p><nav aria-label="Enlaces del pie de página"><a href="#redes">Redes</a><a href="#legal">Legal</a><a href="mailto:contacto@coffee-notebook.co">Contacto</a></nav></div></footer>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Regístrate en Coffee-NoteBook CESDE.">
+  <title>Crear usuario | Coffee-NoteBook CESDE</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body class="auth-page">
+  <main class="auth-shell">
+    <section class="auth-panel auth-panel--form" aria-labelledby="register-title">
+      <header class="auth-header">
+        <a class="brand brand--auth" href="index.html" aria-label="Coffee-NoteBook CESDE, inicio">
+          <span class="brand-mark" aria-hidden="true">CN</span>
+          <span>Coffee-NoteBook <strong>CESDE</strong></span>
+        </a>
+      </header>
+      <div class="auth-copy">
+        <p class="eyebrow">Un perfil, muchas pausas</p>
+        <h1 id="register-title">Crea tu cuenta</h1>
+        <p>Regístrate para guardar tus datos y pedir más rápido.</p>
+      </div>
+      <form class="form-stack" id="registerForm">
+        <div class="form-grid form-grid--two">
+          <div class="field-group">
+            <label for="name">Nombre completo</label>
+            <input id="name" name="name" type="text" autocomplete="name" placeholder="Ej. Ana Pérez" required>
+          </div>
+          <div class="field-group">
+            <label for="userName">Nombre de usuario</label>
+            <input id="userName" name="userName" type="text" autocomplete="username" placeholder="Ej. ana.perez" required>
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="email">Correo electrónico</label>
+          <input id="email" name="email" type="email" autocomplete="email" placeholder="nombre@correo.com" required>
+        </div>
+        <div class="field-group">
+          <label for="address">Dirección de entrega</label>
+          <input id="address" name="address" type="text" autocomplete="street-address" placeholder="Sede, bloque o salón" required>
+        </div>
+        <div class="field-group">
+          <label for="password">Contraseña</label>
+          <input id="password" name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required>
+          <small class="field-hint">Usa al menos 8 caracteres.</small>
+        </div>
+        <p id="registerMessage" class="form-message" role="status" aria-live="polite"></p>
+        <button class="button button--primary button--full" type="submit">Confirmar registro <span aria-hidden="true">→</span></button>
+      </form>
+      <p class="auth-switch">¿Ya tienes cuenta? <a href="index.html">Volver al login</a></p>
+    </section>
+    <aside class="auth-visual auth-visual--warm" aria-label="Productos de cafetería">
+      <div class="visual-stamp">Hecho para CESDE</div>
+      <div class="visual-content">
+        <span class="visual-icon" aria-hidden="true">✦</span>
+        <p class="eyebrow">Sabores que conectan</p>
+        <h2>Un buen día empieza con algo rico.</h2>
+      </div>
+    </aside>
+  </main>
+  <footer class="site-footer"><div class="container footer-inner"><p>© 2026 Coffee-NoteBook CESDE</p><nav aria-label="Enlaces del pie de página"><a href="#redes">Redes</a><a href="#legal">Legal</a><a href="mailto:contacto@coffee-notebook.co">Contacto</a></nav></div></footer>
+</body>
+</html>
