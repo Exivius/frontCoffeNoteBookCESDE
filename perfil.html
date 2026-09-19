@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Modifica tus datos personales en Coffee-NoteBook CESDE.">
+  <title>Mis datos personales | Coffee-NoteBook CESDE</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="catalogo.html" aria-label="Coffee-NoteBook CESDE, catálogo">
+        <span class="brand-mark" aria-hidden="true">CN</span>
+        <span>Coffee-NoteBook <strong>CESDE</strong></span>
+      </a>
+      <div class="header-actions">
+        <a class="logged-user" id="loggedUser" href="perfil.html" aria-label="Modificar datos personales">
+          Hola, <strong id="loggedUserName">usuario</strong>
+        </a>
+        <button class="button button--ghost button--small" id="logoutButton" type="button">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-content narrow-content">
+    <div class="breadcrumb">
+      <a href="catalogo.html">Catálogo</a>
+      <span aria-hidden="true">/</span>
+      <span>Mis datos personales</span>
+    </div>
+
+    <div class="page-title-row">
+      <div>
+        <p class="eyebrow">Tu cuenta</p>
+        <h1>Mis datos personales</h1>
+      </div>
+    </div>
+
+    <form class="payment-panel form-stack" id="profileForm">
+      <div class="form-grid form-grid--two">
+        <div class="field-group">
+          <label for="name">Nombre completo</label>
+          <input id="name" name="name" type="text" autocomplete="name" placeholder="Ej. Ana Pérez" required>
+        </div>
+        <div class="field-group">
+          <label for="userName">Nombre de usuario</label>
+          <input id="userName" name="userName" type="text" autocomplete="username" placeholder="Ej. ana.perez" required>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="email">Correo electrónico</label>
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="nombre@correo.com" required>
+      </div>
+
+      <div class="field-group">
+        <label for="address">Sede</label>
+        <select id="address" name="address" autocomplete="address-level2" required>
+          <option value="" selected disabled>Selecciona tu sede</option>
+          <option value="Centro">Centro</option>
+          <option value="Bello">Bello</option>
+          <option value="Rionegro">Rionegro</option>
+          <option value="Sabaneta">Bogotá</option>
+        </select>
+      </div>
+
+      <p id="profileMessage" class="form-message" role="status" aria-live="polite"></p>
+
+      <div class="intro-actions">
+        <a class="button button--secondary" href="catalogo.html">Cancelar</a>
+        <button class="button button--primary" type="submit">Guardar cambios <span aria-hidden="true">✓</span></button>
+      </div>
+    </form>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>© 2026 Coffee-NoteBook CESDE</p>
+      <nav aria-label="Enlaces del pie de página"><a href="#redes">Redes</a><a href="#legal">Legal</a><a href="mailto:contacto@coffee-notebook.co">Contacto</a></nav>
+    </div>
+  </footer>
+</body>
+</html>
