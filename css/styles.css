@@ -67,7 +67,7 @@ h3 { margin-bottom: 8px; font-size: 1.15rem; }
 .product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .product-card { overflow: hidden; border: 1px solid rgba(255,255,255,.7); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow); transition: transform .25s ease, box-shadow .25s ease; }
 .product-card:hover { transform: translateY(-5px); box-shadow: 0 28px 70px rgba(82, 53, 33, .17); }
-.product-image { display: grid; height: 190px; place-items: center; color: rgba(255,255,255,.9); font-size: 4rem; }
+.product-image { display: block; width: 100%; height: 190px; object-fit: cover; }
 .product-image--breakfast { background: linear-gradient(135deg, #dd8d4b, #9e472a); }
 .product-image--lunch { background: linear-gradient(135deg, #7b8460, #374e48); }
 .product-image--dinner { background: linear-gradient(135deg, #566074, #273442); }

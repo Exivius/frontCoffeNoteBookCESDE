@@ -28,7 +28,7 @@
         <p class="intro-text">Opciones preparadas para acompañar tus clases, reuniones y descansos.</p>
       </div>
       <div class="intro-actions">
-        <a class="button button--secondary" href="orden.html">Ver mis órdenes</a>
+        <button class="button button--secondary" id="ordersButton" type="button">Ver mis órdenes</button>
         <a class="button button--primary" href="carrito.html">Finalizar compra <span aria-hidden="true">→</span></a>
       </div>
     </section>
@@ -40,50 +40,13 @@
         </div>
         <span class="results-count" id="productCount">Productos disponibles</span>
       </div>
-      <div class="product-grid" id="productList">
-        <article class="product-card" data-category="breakfast">
-          <div class="product-image product-image--breakfast" role="img" aria-label="Desayuno con huevos, pan y fruta"><span>☀</span></div>
-          <div class="product-card__body">
-            <div class="product-card__topline"><span class="tag">Desayuno</span><span class="stock-label">Disponible</span></div>
-            <h3>Desayuno CESDE</h3>
-            <p>Huevos al gusto, pan artesanal, bebida caliente y fruta de temporada.</p>
-            <div class="product-card__footer">
-              <strong class="price">$12.500</strong>
-              <div class="quantity-control"><label for="quantity-breakfast">Cantidad</label><input id="quantity-breakfast" name="quantity" type="number" min="1" value="1" data-product-id="breakfast"></div>
-              <button class="button button--primary button--icon" type="button" data-action="add-to-cart" data-product-id="breakfast" aria-label="Agregar Desayuno CESDE al carrito">+</button>
-            </div>
-          </div>
-        </article>
-        <article class="product-card" data-category="lunch">
-          <div class="product-image product-image--lunch" role="img" aria-label="Almuerzo completo"><span>◒</span></div>
-          <div class="product-card__body">
-            <div class="product-card__topline"><span class="tag">Almuerzo</span><span class="stock-label">Disponible</span></div>
-            <h3>Almuerzo del día</h3>
-            <p>Proteína del día, acompañamientos, ensalada fresca y sopa casera.</p>
-            <div class="product-card__footer">
-              <strong class="price">$18.900</strong>
-              <div class="quantity-control"><label for="quantity-lunch">Cantidad</label><input id="quantity-lunch" name="quantity" type="number" min="1" value="1" data-product-id="lunch"></div>
-              <button class="button button--primary button--icon" type="button" data-action="add-to-cart" data-product-id="lunch" aria-label="Agregar Almuerzo del día al carrito">+</button>
-            </div>
-          </div>
-        </article>
-        <article class="product-card" data-category="dinner">
-          <div class="product-image product-image--dinner" role="img" aria-label="Cena ligera"><span>☾</span></div>
-          <div class="product-card__body">
-            <div class="product-card__topline"><span class="tag">Cena</span><span class="stock-label">Disponible</span></div>
-            <h3>Cena ligera</h3>
-            <p>Preparación equilibrada, fresca y reconfortante para cerrar tu jornada.</p>
-            <div class="product-card__footer">
-              <strong class="price">$16.500</strong>
-              <div class="quantity-control"><label for="quantity-dinner">Cantidad</label><input id="quantity-dinner" name="quantity" type="number" min="1" value="1" data-product-id="dinner"></div>
-              <button class="button button--primary button--icon" type="button" data-action="add-to-cart" data-product-id="dinner" aria-label="Agregar Cena ligera al carrito">+</button>
-            </div>
-          </div>
-        </article>
-      </div>
+      <div class="product-grid" id="productList"></div>
+      <p id="catalogMessage" class="form-message" role="status" aria-live="polite"></p>
       <p class="empty-state" id="catalogEmpty" hidden>No hay productos disponibles por ahora.</p>
     </section>
+    <section class="container history-section" id="orderHistory" hidden aria-live="polite"></section>
   </main>
   <footer class="site-footer"><div class="container footer-inner"><p>© 2026 Coffee-NoteBook CESDE</p><nav aria-label="Enlaces del pie de página"><a href="#redes">Redes</a><a href="#legal">Legal</a><a href="mailto:contacto@coffee-notebook.co">Contacto</a></nav></div></footer>
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>
