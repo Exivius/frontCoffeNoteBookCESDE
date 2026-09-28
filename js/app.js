@@ -231,9 +231,9 @@ function configurarLogin(){
     if(!lista) return;
     const productos =  obtenerProductos();
     const imagenesProductos = {
-        breakfast: './images/productos/breakfast.png',
-        lunch: './images/productos/lunch.png',
-        dinner: './images/productos/dinner.png'
+        breakfast: './images/breakfast.png',
+        lunch: './images/lunch.png',
+        dinner: './images/dinner.png'
     };
     //Usamos innerHTML para insertar un nuevo elemento html dentro del elemento HTML guardado dentro de lista
     lista.innerHTML = productos.map((producto) => {
@@ -241,7 +241,7 @@ function configurarLogin(){
         return `<article class="product-card" data-category="${info.identificacion}">
 			<img class="product-image product-image--${info.identificacion.toLowerCase()}" src="${imagenesProductos[info.identificacion.toLowerCase()]}" alt="${info.nombre}" loading="lazy">
 			<div class="product-card__body"><div class="product-card__topline"><span class="tag">${info.categoria}</span><span class="stock-label">${info.stock} disponibles</span></div>
-			<h3>${info.nombre}</h3><p>${info.descripcion}</p><div class="product-card__footer"><strong class="price">${info.precio}</strong>
+			<h3>${info.nombre}</h3><p>${info.descripcion}</p><div class="product-card__footer"><strong class="price">${formatoMoneda.format(info.precio)}</strong>
 			<div class="quantity-control"><label for="quantity-${info.identificacion}">Cantidad</label><input id="quantity-${info.identificacion}" type="number" min="0" max="${info.stock}" value="0" data-product-id="${info.identificacion}"></div>
 			<button class="button button--primary button--icon" type="button" data-action="add-to-cart" data-product-id="${info.identificacion}" aria-label="Agregar ${info.nombre} al carrito" title="Agregar producto al carrito" data-tooltip="Agregar producto al carrito">+</button></div></div></article>`;
 	}).join(''); //join convierte el arreglo que muestra mal y lo transforma en HTML
@@ -260,12 +260,13 @@ function configurarLogin(){
         //se ejecuta el evento de click     
         const cantidadSeleccionada = Number(entrada.value);
         //Guarda el producto especifico sobre el que haga click
-        const producto = productos.find((item) => item.producto.identificacion === boton.dataset.productId);
-        if(!cantidadSeleccionada || cantidadSeleccionada < 1) return mostrarAdvertencia('Seleccione una cantidad mayor a cero.', 'catalogMessage');
+        const producto = productos.find(
+            (item) => item.identificacion === boton.dataset.productId);
+        if(!Number.isInteger(cantidadSeleccionada) || cantidadSeleccionada < 1) return mostrarAdvertencia('Seleccione una cantidad mayor a cero.', 'catalogMessage');
         //Agrega los productos al carrito de compras
         const carrito = obtenerCarrito();
         //Buscamos cuantas unidades de este producto existen actualmente agregadas al carrito
-        const cantidadActual = carrito.listaDeProductos.find((item) => item.producto.identificacion === producto.identificacion)?.cantidadActual || 0;
+        const cantidadActual = carrito.listaDeProductos.find((item) => item.producto.identificacion === producto.identificacion)?.cantidad || 0;
         //Si existe actualmente el producto agregado, suma la nueva cantidad que se va a agregar
         //Si no hay id del producto (o esta en 0), se agrega la cantidad seleccionada por el usuario
         if(cantidadActual + cantidadSeleccionada > producto.stock) return mostrarAdvertencia('La cantidad seleccionada supera el stock disponible', 'catalogMessage');
@@ -274,17 +275,50 @@ function configurarLogin(){
         entrada.value = '0';
         mostrarAdvertencia('Producto agregado exitosamente al carrito', 'catalogMessage')
     });
-    //Falta por crear la funcionalidad del boton para el historial de las ordenes y el evento que se activa al dar click sobre
-    //el boton del historial
+    }
+
+// Formateador reutilizable: es-CO usa las convenciones de Colombia (punto para miles).
+// .format(precio) devuelve texto para mostrar; no modifica el número usado en los cálculos.
+// Se inicializa antes de ejecutar cargarTarjetas(), donde se utiliza para mostrar los precios.
+const formatoMoneda = new Intl.NumberFormat('es-CO', {
+    style: 'currency', // Presenta el valor como dinero e incluye el símbolo de moneda.
+    currency: 'COP', // Utiliza pesos colombianos.
+    maximumFractionDigits: 0 // Muestra pesos sin decimales; redondea solo la presentación.
+});
+// Muestra el usuario de la sesión y conecta el botón para cerrar sesión.
+// Comprueba que los elementos existan porque app.js se carga en varias páginas.
+function configurarCabecera() {
+    const usuario = usuarioActivo();
+    if (!usuario) return;
+
+    const nombre = document.querySelector('#loggedUserName');
+    if (nombre) {
+        // Escribe el nombre como texto, sin interpretarlo como HTML.
+        nombre.textContent = usuario.nombre;
+    }
+
+    const botonSalir = document.querySelector('#logoutButton');
+    if (botonSalir) {
+        botonSalir.addEventListener('click', () => {
+            // Elimina solo la sesión activa; conserva los usuarios y los carritos guardados.
+            sessionStorage.removeItem(CLAVES.usuarioActivo);
+            window.location.href = 'index.html';
+        });
+    }
 }
 
+
+//Falta por crear la funcionalidad del boton para el historial de las ordenes y el evento que se activa al dar click sobre
+//el boton del historial
 //Crear la clase que da funcionalidad al boton de "Finalizar compra"
 
 //localStorage.clear();
 
-if(protegerPaginas  ()){
+if(protegerPaginas()){
+    configurarCabecera();
     configurarLogin();
     configurarRegistro();
     cargarTarjetas();
+    
 }
 
