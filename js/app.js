@@ -252,7 +252,7 @@ function configurarLogin(){
 			<div class="product-card__body"><div class="product-card__topline"><span class="tag">${info.categoria}</span><span class="stock-label">${info.stock} disponibles</span></div>
 			<h3>${info.nombre}</h3><p>${info.descripcion}</p><div class="product-card__footer"><strong class="price">${formatoMoneda.format(info.precio)}</strong>
 			<div class="quantity-control"><label for="quantity-${info.identificacion}">Cantidad</label><input id="quantity-${info.identificacion}" type="number" min="0" max="${info.stock}" value="0" data-product-id="${info.identificacion}"></div>
-			<button class="button button--primary button--icon" type="button" data-action="add-to-cart" data-product-id="${info.identificacion}" aria-label="Agregar ${info.nombre} al carrito" title="Agregar producto al carrito" data-tooltip="Agregar producto al carrito">+</button></div></div></article>`;
+			<button class="button button--primary button--icon" type="button" data-action="add-to-cart" data-product-id="${info.identificacion}" title="Agregar producto al carrito" data-tooltip="Agregar producto al carrito">+</button></div></div></article>`;
 	}).join(''); //join convierte el arreglo que muestra mal y lo transforma en HTML
     //Creamos un contador para mostrar los productos que hay disponibles para la compra
     const contador =  document.querySelector('#productCount')
@@ -269,10 +269,19 @@ function configurarLogin(){
         //se ejecuta el evento de click     
         const cantidadSeleccionada = Number(entrada.value);
         //Guarda el producto especifico sobre el que haga click
-        const producto = productos.find(
+        const producto = obtenerProductos().find(
             (item) => item.identificacion === boton.dataset.productId);
+            // Impide agregar un producto retirado del catálogo.
+            if (!producto) {
+                mostrarAdvertencia(
+                    'Este producto ya no está disponible.',
+                    'catalogMessage'
+                );
+                return;
+            }
         if(!Number.isInteger(cantidadSeleccionada) || cantidadSeleccionada < 1) return mostrarAdvertencia('Seleccione una cantidad mayor a cero.', 'catalogMessage');
         //Agrega los productos al carrito de compras
+        // Recupera el carrito guardado del usuario que tiene la sesión iniciada.
         const carrito = obtenerCarrito();
         //Buscamos cuantas unidades de este producto existen actualmente agregadas al carrito
         const cantidadActual = carrito.listaDeProductos.find((item) => item.producto.identificacion === producto.identificacion)?.cantidad || 0;
@@ -315,19 +324,372 @@ function configurarCabecera() {
         });
     }
 }
+    // Conecta la pantalla del carrito con los datos guardados del usuario.
+function configurarCarrito() {
+    const tabla = document.querySelector('#cartItems');
+
+    // Como app.js se carga en todas las páginas, solo continuamos
+    // cuando existe la tabla de carrito.html.
+    if (!tabla) return;
+
+    // Elementos donde mostraremos el resumen.
+    const contador = document.querySelector('#cartCount');
+    const subtotal = document.querySelector('#subtotal');
+    const total = document.querySelector('#total');
+    const sedeRecogida = document.querySelector('#pickupStore');
+    const botonPago = document.querySelector('#checkoutButton');
+
+    // Conserva el mensaje de carrito vacío que ya tiene el HTML.
+    const contenidoVacio = tabla.innerHTML;
+
+    // Reutiliza la función existente para mostrar mensajes.
+    function mostrarMensaje(texto) {
+        mostrarAdvertencia(texto, 'cartMessage');
+    }
+
+    // Consulta el producto en el catálogo actual.
+    // Su stock podría haber cambiado desde que se agregó al carrito.
+    function buscarProductoActual(productoId) {
+        return obtenerProductos().find(
+            producto => producto.identificacion === productoId
+        );
+    }
+
+    // Revisa si el carrito puede continuar al pago.
+    // Devuelve un mensaje cuando encuentra un problema.
+    function validarCarrito(carrito) {
+        if (carrito.listaDeProductos.length === 0) {
+            return 'Agrega productos antes de continuar al pago.';
+        }
+
+        // La sede del registro está guardada como "direccion".
+        const usuario = usuarioActivo();
+        
+        // Valida que el usuario tenga una sede registrada."trim" elimina los espacios en blanco al inicio y al final de la cadena de texto
+        if (!usuario?.direccion?.trim()) {
+            return 'Tu cuenta no tiene una sede de recogida. Revisa tus datos personales.';
+        }
+        // for of sirve para recorrer todos los elementos de un arreglo, en este caso el arreglo de productos del carrito
+        // "item" es la variable que representa cada elemento del arreglo en cada iteración del bucle
+        // "carrito.listaDeProductos" es el arreglo que contiene los productos del carrito
+        for (const item of carrito.listaDeProductos) {
+            const producto = buscarProductoActual(
+                item.producto.identificacion
+            );
+            // Valida que el producto aún exista en el catálogo y que la cantidad sea válida.
+            if (!producto) {//!producto "!" significa "no" o "negación", por lo que "!producto" significa "si no existe el producto"
+                return `${item.producto.nombre} ya no está disponible. Elimínalo del carrito.`;
+            }
+            // Valida que la cantidad sea un número entero y mayor a cero
+            if (!Number.isInteger(item.cantidad) || item.cantidad < 1) {
+                return `Revisa la cantidad de ${item.producto.nombre}.`;
+            }
+            //valida que la cantidad no supere el stock disponible
+            if (item.cantidad > producto.stock) { 
+                return `Solo hay ${producto.stock} unidades disponibles de ${producto.nombre}. Ajusta la cantidad o elimina el producto.`;
+            }
+        }
+
+        // Sin mensaje significa que el carrito es válido.
+        return '';
+    }
+
+    // Actualiza la tabla, las cantidades, los valores y la sede.
+    function mostrarCarrito() {
+        // Recupera el carrito guardado del usuario que tiene la sesión iniciada.
+        const carrito = obtenerCarrito();
+        const items = carrito.listaDeProductos;
+        const estaVacio = items.length === 0;// Determina si el carrito está vacío para deshabilitar el botón de pago.
+        const usuario = usuarioActivo();
+
+        // Muestra la sede elegida al registrarse.
+        // Esta versión utiliza la sede del usuario como tienda de recogida.
+        sedeRecogida.textContent =
+            usuario?.direccion || 'Sin sede seleccionada';
+
+        // El subtotal es la suma de precio por cantidad.
+        const valorSubtotal = carrito.calcularTotal();
+
+        // Cuenta todas las unidades, no solo los productos diferentes.
+        const unidades = items.reduce(
+            (acumulado, item) => acumulado + item.cantidad,
+            0
+        );
+        //Muestra el número de unidades usando singular o plural
+        contador.textContent =
+            `${unidades} ${unidades === 1 ? 'producto' : 'productos'}`;
+        // Muestra el subtotal y el total con formato de moneda.
+        subtotal.textContent = formatoMoneda.format(valorSubtotal);
+
+        // Todos los pedidos se recogen en tienda.
+        // No hay costo de domicilio, por eso total y subtotal son iguales.
+        total.textContent = formatoMoneda.format(valorSubtotal);
+
+        if (estaVacio) {
+            // Sin productos no hay enlace al pago.
+            botonPago.removeAttribute('href');
+
+            // Recupera el mensaje original de carrito vacío.
+            tabla.innerHTML = contenidoVacio;
+            return;
+        }
+
+        // Con productos, el enlace puede llevar a pago.html.
+        // Antes de navegar también se validará el carrito.
+        botonPago.setAttribute('href', 'pago.html');
+
+        // Limpia la tabla antes de mostrar los datos actualizados,
+        // para que no queden filas viejas junto a las nuevas.
+        tabla.replaceChildren();
+        // Recorre los elementos del carrito: cada item contiene un producto y su cantidad.
+        // Por ejemplo, 2 Combo CESDE ocupan una sola fila con cantidad 2.
+        items.forEach(item => {
+            // item contiene producto y cantidad. Aquí obtenemos solo el producto guardado en el carrito.
+            const producto = item.producto;
+            // Busca ese mismo producto en el catálogo por su identificación para consultar su stock actual.
+            const productoActual = buscarProductoActual(
+                producto.identificacion
+            );
+
+            // Crea una fila vacía (<tr>) para este producto. Se verá cuando la agreguemos a tabla con append.
+            const fila = document.createElement('tr');
+
+            // Crea cinco celdas vacías (<td>) para esta fila del producto.
+            // Las primeras cuatro mostrarán nombre, precio, cantidad y subtotal.
+            // celdaAccion será el espacio para el botón Eliminar; crear la celda no elimina nada.
+            const celdaNombre = document.createElement('td');
+            const celdaPrecio = document.createElement('td');
+            const celdaCantidad = document.createElement('td');
+            const celdaSubtotal = document.createElement('td');
+            const celdaAccion = document.createElement('td');
+
+            // Escribe el nombre del producto dentro de su celda. textContent lo muestra como texto, sin interpretarlo como HTML.
+            celdaNombre.textContent = producto.nombre;
+            // Escribe el precio de una unidad con formato de pesos; por ejemplo, 8550 se muestra como $8.550.
+            celdaPrecio.textContent =
+                formatoMoneda.format(producto.precio);
+            // Muestra el subtotal de esta fila: por ejemplo, 2 combos de 8550 suman 17100. Luego aplica formato de moneda.
+            celdaSubtotal.textContent =
+                formatoMoneda.format(producto.precio * item.cantidad);
+
+            // Crea el campo donde el usuario verá y podrá cambiar cuántas unidades quiere de este producto.
+            const entradaCantidad = document.createElement('input');
+            // type configura un campo numérico; min indica que la cantidad válida empieza en 1.
+            // step hace que las flechas del campo aumenten o disminuyan la cantidad de una en una.
+            entradaCantidad.type = 'number';
+            entradaCantidad.min = '1';
+            entradaCantidad.step = '1';
+            // El máximo válido es el stock del catálogo. String convierte ese número a texto para el campo HTML.
+            entradaCantidad.max = String(
+                // Ternario: si se encontró el producto, usa su stock; si no se encontró, usa 0. Luego también validamos la cantidad con JavaScript.
+                productoActual ? productoActual.stock : 0 
+            );
+            // Muestra en el campo la cantidad que ya está guardada en el carrito.
+            entradaCantidad.value = String(item.cantidad);
+
+            // dataset.productId crea data-product-id en el HTML y guarda el identificador para saber qué producto cambiar.
+            entradaCantidad.dataset.productId =
+                producto.identificacion;
+            // Guarda data-action="change-quantity" en el campo. Más abajo usamos esa etiqueta para reconocer qué cambio atender.
+            entradaCantidad.dataset.action = 'change-quantity';
 
 
-//Falta por crear la funcionalidad del boton para el historial de las ordenes y el evento que se activa al dar click sobre
-//el boton del historial
-//Crear la clase que da funcionalidad al boton de "Finalizar compra"
+            // Crea un contenedor para el campo y le asigna la clase CSS quantity-control, que define su apariencia.
+            const controlCantidad = document.createElement('div');
+            controlCantidad.className = 'quantity-control';
+            // append coloca un elemento dentro de otro: campo de cantidad → div de estilo → celdaCantidad.
+            controlCantidad.append(entradaCantidad);
+            celdaCantidad.append(controlCantidad);
 
-//localStorage.clear();
+            // Crea el botón que pondremos en la celda de acciones.
+// El evento click definido más abajo se encarga de eliminar el producto.
+            const botonEliminar = document.createElement('button');
+            // Es un botón de acción: no debe enviar un formulario.
+            botonEliminar.type = 'button';
+            // Asigna las clases CSS que dan estilo al botón; no cambian los datos del carrito.
+            botonEliminar.className =
+                'button button--ghost button--small';
+            // Escribe Eliminar como texto visible dentro del botón.
+            botonEliminar.textContent = 'Eliminar';
+            // Guarda dos datos en el botón: la acción que representa y la identificación del producto.
+            // Estas etiquetas no eliminan nada todavía; el evento click las leerá cuando el usuario pulse el botón.
+            botonEliminar.dataset.action = 'remove-product';
+            botonEliminar.dataset.productId =
+                producto.identificacion;
 
+
+            // Coloca el botón Eliminar en la última celda. Esto solo organiza la fila; aún no quita productos del carrito.
+            celdaAccion.append(botonEliminar);
+
+            // Introduce las cinco celdas en la fila, en el mismo orden que los encabezados del HTML.
+            fila.append(
+                celdaNombre,
+                celdaPrecio,
+                celdaCantidad,
+                celdaSubtotal,
+                celdaAccion
+            );
+
+            // Agrega la fila al cuerpo de la tabla: ahora sus elementos aparecen en la página.
+            tabla.append(fila);
+        });
+    }
+
+    // Conecta la acción que se ejecutará cuando el usuario cambie una cantidad y confirme el cambio, por ejemplo al salir del campo.
+    // Escuchamos desde la tabla porque los eventos de sus campos llegan a ella.
+    // Así no hay que volver a conectar cada campo cuando mostrarCarrito reconstruye las filas.
+    tabla.addEventListener('change', evento => {
+        // evento.target indica en qué elemento ocurrió el cambio.
+        // closest busca el propio elemento o uno de sus contenedores con data-action="change-quantity".
+        const entrada = evento.target.closest(
+            '[data-action="change-quantity"]'
+        );
+
+        // Si el cambio no corresponde a un campo etiquetado como change-quantity, termina esta función.
+        if (!entrada) return;
+
+        // Recupera la identificación guardada en data-product-id para localizar el producto correcto.
+        const productoId = entrada.dataset.productId;
+        // value viene como texto; Number lo convierte a número para validar y calcular.
+        const cantidad = Number(entrada.value);
+        // Consulta otra vez el catálogo para comprobar que el producto exista y conocer su stock.
+        const producto = buscarProductoActual(productoId);
+
+        if (
+            // Rechaza si el campo está vacío O la cantidad no es entera O es menor que 1. Cada || significa O.
+            entrada.value.trim() === '' ||
+            // Number.isInteger comprueba si es entero; ! niega la comprobación, por lo que detecta cantidades no enteras.
+            !Number.isInteger(cantidad) ||
+            // También rechaza cero y números negativos: para quitar el producto se utiliza el botón Eliminar.
+            cantidad < 1
+        ) {
+            mostrarMensaje(
+                'Ingresa una cantidad entera mayor que cero. Para quitar el producto, usa Eliminar.'
+            );
+
+            // Lee el carrito guardado y vuelve a dibujar las filas, cantidades y totales en pantalla.
+            mostrarCarrito();
+            return;
+        }
+
+        // Si el catálogo ya no contiene el producto, avisa y restaura la vista sin guardar la cantidad nueva.
+        if (!producto) {
+            mostrarMensaje(
+                'Este producto ya no está disponible. Elimínalo del carrito.'
+            );
+            // Lee el carrito guardado y vuelve a dibujar las filas, cantidades y totales en pantalla.
+            mostrarCarrito();
+            return;
+        }
+
+        // Comprueba el stock con JavaScript: max por sí solo no impide que alguien escriba una cantidad mayor.
+        if (cantidad > producto.stock) {
+            mostrarMensaje(
+                `Solo hay ${producto.stock} unidades disponibles de ${producto.nombre}.`
+            );
+            // Lee el carrito guardado y vuelve a dibujar las filas, cantidades y totales en pantalla.
+            mostrarCarrito();
+            return;
+        }
+
+        // Recupera el carrito guardado del usuario que tiene la sesión iniciada.
+        const carrito = obtenerCarrito();
+        // El método de modelos.js cambia la cantidad del producto, recalcula el total y guarda el carrito en localStorage.
+        carrito.actualizarCantidadProducto(productoId, cantidad);
+
+        // Lee el carrito guardado y vuelve a dibujar las filas, cantidades y totales en pantalla.
+        mostrarCarrito();
+        // Informa que el cambio se guardó. mostrarCarrito, arriba, ya reconstruyó la tabla y actualizó los totales.
+        mostrarMensaje('Cantidad actualizada correctamente.');
+    });
+
+    // Aquí se conecta la acción de eliminar, que solo se ejecuta cuando llega un clic.
+    // Una sola función en la tabla atiende todos los botones Eliminar, incluso después de reconstruir las filas.
+    tabla.addEventListener('click', evento => {
+        // Busca el botón de eliminar aunque el clic ocurra sobre un elemento dentro del botón.
+        const boton = evento.target.closest(
+            '[data-action="remove-product"]'
+        );
+
+        // Si el clic fue en otra parte de la tabla, termina sin eliminar ningún producto.
+        if (!boton) return;
+
+        // Recupera el carrito guardado del usuario que tiene la sesión iniciada.
+        const carrito = obtenerCarrito();
+
+        // Aquí sí se elimina el producto del carrito, con todas sus unidades.
+        // Por ejemplo, si había 3 combos, se quita la entrada completa; no se resta solo uno.
+        // El método de modelos.js también recalcula el total y guarda el carrito en localStorage.
+        carrito.eliminarProducto(boton.dataset.productId);
+
+        // Lee el carrito guardado y vuelve a dibujar las filas, cantidades y totales en pantalla.
+        mostrarCarrito();
+        // Después de volver a mostrar el carrito, confirma al usuario que se eliminó el producto.
+        mostrarMensaje('Producto eliminado del carrito.');
+    });
+
+    // Al pulsar Continuar al pago, revisa los datos antes de permitir que el enlace abra pago.html.
+    botonPago.addEventListener('click', evento => {
+        // Recupera el carrito guardado del usuario que tiene la sesión iniciada.
+        const carrito = obtenerCarrito();
+        // validarCarrito devuelve un mensaje si hay un problema, o un texto vacío si todas sus comprobaciones pasan.
+        const error = validarCarrito(carrito);
+
+        // Si error contiene un mensaje, impide ir al pago y muestra ese mensaje.
+        // Si contiene '', no entra al if y el enlace puede abrir pago.html normalmente.
+        if (error) {
+            // Cancela la navegación del enlace para que el usuario corrija el problema antes de ir al pago.
+            evento.preventDefault();
+            // Lee el carrito guardado y vuelve a dibujar las filas, cantidades y totales en pantalla.
+            mostrarCarrito();
+            // Muestra el motivo concreto por el que no puede continuar al pago.
+            mostrarMensaje(error);
+        }
+
+    });
+
+    // Para localStorage, storage avisa de cambios hechos en otra pestaña del mismo sitio, no de los realizados en esta pestaña.
+    // Si otra pestaña de este mismo sitio cambia los datos guardados,
+    // recibe el aviso para comprobar si debemos actualizar este carrito.
+    window.addEventListener('storage', evento => {
+        const usuario = usuarioActivo();
+
+        // Sin usuario activo no hay un carrito personal que actualizar; termina este evento.
+        if (!usuario) return;
+
+        // Usa el id del usuario para reconocer su carrito guardado; por ejemplo, el usuario 123 tiene la clave carrito_123.
+        const claveCarrito = `carrito_${usuario.id}`;
+
+        if (
+            // Actualiza si cambió el carrito de este usuario, la lista de productos, o se vació todo localStorage (key es null).
+            evento.key === claveCarrito ||
+            evento.key === CLAVES.productos ||
+            evento.key === null
+        ) {
+            // Lee el carrito guardado y vuelve a dibujar las filas, cantidades y totales en pantalla.
+            mostrarCarrito();
+        }
+    });
+
+    // Lee el carrito guardado y vuelve a dibujar las filas, cantidades y totales en pantalla.
+    mostrarCarrito();
+}
+
+
+
+
+// Al cargar app.js, primero comprueba si esta página requiere iniciar sesión. Si se permite entrar, ejecuta las configuraciones siguientes.
 if(protegerPaginas()){
+    // Muestra el nombre del usuario y conecta el botón Cerrar sesión.
     configurarCabecera();
+    // Conecta el formulario de inicio de sesión si existe en la página actual.
     configurarLogin();
+    // Conecta el formulario de registro si existe en la página actual.
     configurarRegistro();
+    // Muestra los productos y conecta los botones para agregarlos al carrito si existe el catálogo.
     cargarTarjetas();
+    // Si existe la tabla del carrito, conecta sus eventos y muestra los datos guardados.
+    configurarCarrito();
     
 }
 
