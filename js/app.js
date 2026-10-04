@@ -1,4 +1,5 @@
 import Producto, { Almuerzo, CarroDeCompras, Cena, Cliente, Desayuno, MetodoDePago, Orden } from './modelos.js';
+import ControladorPerfil from './perfil.js';
 
 //claves o tablas de la BD simulada
 const CLAVES = {
@@ -46,6 +47,14 @@ function protegerPaginas(){
     if(paginasProtegidas.includes(pagina()) && !usuarioActivo()){
         window.location.href = "index.html?message=Debes iniciar sesión para continuar";
         return false;
+
+    if(protegerPaginas()){
+        configurarCabecera();
+        configurarLogin();
+        configurarRegistro();
+        cargarTarjetas();
+        if(document.querySelector('#profileForm')) new ControladorPerfil().iniciar();
+    }
     }
     return true;
 }
