@@ -32,6 +32,13 @@ export default class Producto {
     toJSON() {
         return this.mostrarDatos();
     }
+
+    actualizarStock(cantidad){
+        //El stock nunca debe quedar en un numero negativo.
+        //Validamos que el maximo permitido sea 0 y restamos del stock actual
+        this.#stock = Math.max(0, this.#stock - cantidad);
+        return this.#stock;
+    }
 }
 
 export class Desayuno extends Producto {
