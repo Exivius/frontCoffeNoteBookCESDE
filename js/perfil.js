@@ -1,11 +1,11 @@
 // actualizamos los datos personales usando la clase cliente
 
-import {cliente} from './modelos.js'
+import {Cliente} from './modelos.js'
 
 export default class ControladorPerfil{
     constructor(){
-        this.formulario = document.querySelector('profileForm');
-        this.mensaje = document.querySelector('profileMessage');
+        this.formulario = document.querySelector('#profileForm');
+        this.mensaje = document.querySelector('#profileMessage');
         //sesion activa se aloja en session Storage creada desde configurar Login de app.js
         this.session = JSON.parse(sessionStorage.getItem('usuarioActual') || 'null');
     }
