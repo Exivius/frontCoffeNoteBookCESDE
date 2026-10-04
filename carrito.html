@@ -52,13 +52,25 @@
       <aside class="summary-card">
         <h2>Resumen de compra</h2>
         <div class="summary-line"><span>Subtotal</span><strong id="subtotal">$0</strong></div>
-        <div class="summary-line"><span>Entrega</span><strong id="deliveryCost">$0</strong></div>
+        <!-- El pedido se recoge en la sede del usuario-->
+        <div class="summary-line">
+            <span>Recoger en</span>
+            <strong id="pickupStore">Sin sede seleccionada</strong>
+        </div>
         <div class="summary-total"><span>Total</span><strong id="total">$0</strong></div><a
           class="button button--primary button--full" id="checkoutButton" href="pago.html">Continuar al pago <span
             aria-hidden="true">→</span></a>
         <p class="secure-note">⌁ Compra segura y protegida</p>
       </aside>
     </section>
+    <!-- Muestra confirmaciones y errores al modificar el carrito.
+     aria-live permite que un lector de pantalla anuncie los mensajes. -->
+    <p
+      id="cartMessage"
+      class="form-message"
+      role="status"
+      aria-live="polite"
+    ></p>
     <a class="back-link" href="catalogo.html">← Seguir comprando</a>
   </main>
   <footer class="site-footer">
