@@ -1,12 +1,4 @@
-import Producto, {
-  Almuerzo,
-  CarroDeCompras,
-  Cena,
-  Cliente,
-  Desayuno,
-  MetodoDePago,
-  Orden,
-} from "./modelos.js";
+import Producto, { Almuerzo, CarroDeCompras, Cena, Cliente, Desayuno, MetodoDePago, Orden } from './modelos.js';
 
 //claves o tablas de la BD simulada
 const CLAVES = {
@@ -78,20 +70,13 @@ const usuarioActivo = () => {
 //El nombre de la pagina. Si no encuentra un valor valido, devuelve por defecto la pagina index.HTML
 const pagina = () => window.location.pathname.split("/").pop() || "index.html";
 
-function protegerPaginas() {
-  const paginasProtegidas = [
-    "catalogo.html",
-    "carrito.html",
-    "pago.html",
-    "orden.html",
-    "perfil.html",
-  ];
-  if (paginasProtegidas.includes(pagina()) && !usuarioActivo()) {
-    window.location.href =
-      "index.html?message=Debes iniciar sesión para continuar";
-    return false;
-  }
-  return true;
+function protegerPaginas(){
+    const paginasProtegidas = ['catalogo.html', 'carrito.html', 'pago.html', 'orden.html', 'perfil.html'];
+    if(paginasProtegidas.includes(pagina()) && !usuarioActivo()){
+        window.location.href = "index.html?message=Debes iniciar sesión para continuar";
+        return false;
+    }
+    return true;
 }
 
 //Convertidos los productos ya guardados en el tipo de clase al que corresponden en modelos.js
@@ -296,57 +281,38 @@ function cargarTarjetas() {
 			<h3>${info.nombre}</h3><p>${info.descripcion}</p><div class="product-card__footer"><strong class="price">${formatoMoneda.format(info.precio)}</strong>
 			<div class="quantity-control"><label for="quantity-${info.identificacion}">Cantidad</label><input id="quantity-${info.identificacion}" type="number" min="0" max="${info.stock}" value="0" data-product-id="${info.identificacion}"></div>
 			<button class="button button--primary button--icon" type="button" data-action="add-to-cart" data-product-id="${info.identificacion}" aria-label="Agregar ${info.nombre} al carrito" title="Agregar producto al carrito" data-tooltip="Agregar producto al carrito">+</button></div></div></article>`;
-    })
-    .join(""); //join convierte el arreglo que muestra mal y lo transforma en HTML
-  //Creamos un contador para mostrar los productos que hay disponibles para la compra
-  const contador = document.querySelector("#productCount");
-  if (contador)
-    contador.textContent = `${productos.length} productos disponibles`;
-  lista.addEventListener("click", (evento) => {
-    //target es el elemento html donde el cursor hace click
-    //closest busca sobre el target la referencia a la que se le esta haciendo relación y ejecuta el evento
-    const boton = evento.target.closest('[data-action="add-to-cart"]');
-    if (!boton) return;
-    //dataset.productId hace referencia al boton para agregar productos en las tarjetas del catalogo
-    //Indicado cuales son los id de producto que se deben insertar al carrito
-    const entrada = lista.querySelector(
-      `input[data-product-id = "${boton.dataset.productId}"]`,
-    );
-    //Hace referencia a el valor que se encuentra al lado del boton, de modo que el sistema sabe cuanto agregar una vez
-    //se ejecuta el evento de click
-    const cantidadSeleccionada = Number(entrada.value);
-    //Guarda el producto especifico sobre el que haga click
-    const producto = productos.find(
-      (item) => item.identificacion === boton.dataset.productId,
-    );
-    if (!Number.isInteger(cantidadSeleccionada) || cantidadSeleccionada < 1)
-      return mostrarAdvertencia(
-        "Seleccione una cantidad mayor a cero.",
-        "catalogMessage",
-      );
-    //Agrega los productos al carrito de compras
-    const carrito = obtenerCarrito();
-    //Buscamos cuantas unidades de este producto existen actualmente agregadas al carrito
-    const cantidadActual =
-      carrito.listaDeProductos.find(
-        (item) => item.producto.identificacion === producto.identificacion,
-      )?.cantidad || 0;
-    //Si existe actualmente el producto agregado, suma la nueva cantidad que se va a agregar
-    //Si no hay id del producto (o esta en 0), se agrega la cantidad seleccionada por el usuario
-    if (cantidadActual + cantidadSeleccionada > producto.stock)
-      return mostrarAdvertencia(
-        "La cantidad seleccionada supera el stock disponible",
-        "catalogMessage",
-      );
-    carrito.agregarProducto(producto, cantidadSeleccionada);
-    guardarCarrito(carrito);
-    entrada.value = "0";
-    mostrarAdvertencia(
-      "Producto agregado exitosamente al carrito",
-      "catalogMessage",
-    );
-  });
-}
+	}).join(''); //join convierte el arreglo que muestra mal y lo transforma en HTML
+    //Creamos un contador para mostrar los productos que hay disponibles para la compra
+    const contador =  document.querySelector('#productCount')
+    if (contador) contador.textContent = `${productos.length} productos disponibles`;
+    lista.addEventListener('click', (evento) => {
+        //target es el elemento html donde el cursor hace click
+        //closest busca sobre el target la referencia a la que se le esta haciendo relación y ejecuta el evento
+        const boton = evento.target.closest('[data-action="add-to-cart"]');
+        if(!boton) return;
+        //dataset.productId hace referencia al boton para agregar productos en las tarjetas del catalogo
+        //Indicado cuales son los id de producto que se deben insertar al carrito
+        const entrada = lista.querySelector(`input[data-product-id = "${boton.dataset.productId}"]`);
+        //Hace referencia a el valor que se encuentra al lado del boton, de modo que el sistema sabe cuanto agregar una vez
+        //se ejecuta el evento de click     
+        const cantidadSeleccionada = Number(entrada.value);
+        //Guarda el producto especifico sobre el que haga click
+        const producto = productos.find(
+            (item) => item.identificacion === boton.dataset.productId);
+        if(!Number.isInteger(cantidadSeleccionada) || cantidadSeleccionada < 1) return mostrarAdvertencia('Seleccione una cantidad mayor a cero.', 'catalogMessage');
+        //Agrega los productos al carrito de compras
+        const carrito = obtenerCarrito();
+        //Buscamos cuantas unidades de este producto existen actualmente agregadas al carrito
+        const cantidadActual = carrito.listaDeProductos.find((item) => item.producto.identificacion === producto.identificacion)?.cantidad || 0;
+        //Si existe actualmente el producto agregado, suma la nueva cantidad que se va a agregar
+        //Si no hay id del producto (o esta en 0), se agrega la cantidad seleccionada por el usuario
+        if(cantidadActual + cantidadSeleccionada > producto.stock) return mostrarAdvertencia('La cantidad seleccionada supera el stock disponible', 'catalogMessage');
+        carrito.agregarProducto(producto, cantidadSeleccionada);
+        guardarCarrito(carrito);
+        entrada.value = '0';
+        mostrarAdvertencia('Producto agregado exitosamente al carrito', 'catalogMessage')
+    });
+    }
 
 // Formateador reutilizable: es-CO usa las convenciones de Colombia (punto para miles).
 // .format(precio) devuelve texto para mostrar; no modifica el número usado en los cálculos.
@@ -378,91 +344,6 @@ function configurarCabecera() {
   }
 }
 
-function realizarPago() {
-  //Obtenemos usuatio activo, el carrito asignado a ese cliente
-  const usuario = usuarioActivo();
-  if (!usuario) return;
-  const carrito = obtenerCarrito();
-  //Guardamos el nombre del usuario activo para mostrarlo en un label para referenciar la compra
-  const nombre = document.querySelector("#paymentCustomerName");
-  if (nombre) nombre.textContent = usuario.nombre;
-  //Guardamos el formulario que contiene todos los elementos en una variable
-  const formulario = document.querySelector("#paymentForm");
-  //Validamos que el dformulario tenga información y que el carrito de compras no este vacio
-  if (!formulario) return;
-  if(!carrito.listaDeProductos.length){
-    //Si el carrito esta vacio, regresa a la pagina del carrito
-    window.location.href = 'carrito.html';
-    return;
-  }
-  //Creamos un elemento HTML para mostrar el detalle de lo que se va a pagar
-  let resumen = document.querySelector('#paymentSummary');
-  if(!resumen){
-    resumen = document.createElement('section');
-    resumen.id = 'paymentSummary';
-    resumen.className = 'payment-panel';
-    //inserta un elemento como "hijo"
-    formulario.prepend(resumen);
-  }
-    //Insertamos el elemento HTML
-    resumen.innerHTML = `<h2>Detalle de compra</h2>${carrito.listaDeProductos.map((item) =>`<p class="summary-line"><span>${item.producto.nombre} x ${item.cantidad}</span><strong>${formatoMoneda.format(item.producto.precio * item.cantidad)}</strong></p>`).join('')}<div class="summary-total"><span>Total</span><strong>${formatoMoneda.format(carrito.calcularTotal())}</strong></div>`;
-    const opciones = document.querySelectorAll('input[name="method"]');
-    const camposTarjeta = document.querySelector('#cardFields');
-    const cambiarMetodo = () =>{
-        const esTarjeta = document.querySelector('input[name="method"]:checked')?.value === 'tarjeta';
-        //oculta los campos de la tarjeta si el metodo seleccionado no es tarjeta
-        if (!camposTarjeta) return;
-        camposTarjeta.hidden = !esTarjeta;
-        camposTarjeta.querySelectorAll('input').forEach((input) =>{input.required = esTarjeta;});
-    };
-    //añadimos un event listener para cuando se haga un cambio en el metodo de pago este ejecute la funcion
-    // y despliegue los campos necesario dependiendo de la opción
-    opciones.forEach((opcion) => opcion.addEventListener('change', cambiarMetodo));
-    cambiarMetodo();
-    //Añadimos in listener para cuando se haga click en el boton que procesa la compra
-    formulario.addEventListener('submit', (evento) => {
-        evento.preventDefault();
-        //Si el formulario no es valido, repota los errores que encuentra
-        if(!formulario.checkValidity()) return formulario.reportValidity();
-        //Guardamos en una constante los productos que existen
-        const productos = obtenerProductos();
-        //some valida los productos y valida si alguno tiene un error
-        const stockInsuficiente = carrito.listaDeProductos.some((item) => {
-            //find busca por cada producto en el carrito (item), el mismo item en la base de datos (productos)
-            const producto = productos.find((actual) => actual.identificacion === item.producto.identificacion);
-            //Determina si el stock es insuficiente si:
-            //el producto ya no existe en la BD o el usuario compra una cantidad mayor a la existente en stock
-            return !producto || item.cantidad > producto.stock; 
-        });
-        if(stockInsuficiente){
-            mostrarAdvertencia('Uno de los productos ya no tiene stock suficiente.', 'paymentMessage');
-            return;
-        }
-        //Toma los productos seleccinados por el usuario y busca el mismo ID en la BD para controlar el inventario
-        carrito.listaDeProductos.forEach((item) => {
-            const producto = productos.find((actual) => actual.identificacion === item.producto.identificacion);
-            producto.actualizarStock(item.cantidad)
-        });
-        //Guarda el metodo seleccionado buscando en HTML un input con atributo method y que este seleccionado
-        const metodo = document.querySelector('input[name="method"]:checked').value;
-        //Creamos un nuebo objeto de la clase orden, de modo que podamos guardar la información que sera mostrada
-        //una vez el pago sea procesado
-        const orden = new Orden(usuario.id, carrito.listaDeProductos, carrito.calcularTotal(), new MetodoDePago(metodo));
-        //Traemos las ordenes que ya existan y las metemos a un arreglo para guardar la nueva orden
-        const ordenes = leer(CLAVES.ordenes, []);
-        //"empujamos" la nueva orden dentro de la lista de ordenes
-        ordenes.push(orden);
-        //con map, recorremos el arreglo de productos para guardar y actualizar el stock de los productos comprados
-        guardar(CLAVES.productos, productos.map((producto) => producto.mostrarDatos()));
-        //Guardamos esta orden procesada con las demas ordenes ya existentes
-        guardar(CLAVES.ordenes, ordenes);
-        //Guardamos la ultima orden procesada para ser mostrada en la orden
-        guardar(CLAVES.ultimaOrden, orden);
-        //Limpiamos el carrito de compras
-        guardar(`carrito_${usuario.id}`, []);
-        window.location.href = 'orden.html';
-    })
-}
 
 //Falta por crear la funcionalidad del boton para el historial de las ordenes y el evento que se activa al dar click sobre
 //el boton del historial
@@ -470,10 +351,10 @@ function realizarPago() {
 
 //localStorage.clear();
 
-if (protegerPaginas()) {
-  configurarCabecera();
-  configurarLogin();
-  configurarRegistro();
-  cargarTarjetas();
-  realizarPago();
+if(protegerPaginas()){
+    configurarCabecera();
+    configurarLogin();
+    configurarRegistro();
+    cargarTarjetas();
+    
 }
