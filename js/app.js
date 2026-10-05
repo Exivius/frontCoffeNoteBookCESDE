@@ -825,17 +825,17 @@ function realizarPago() {
         window.location.href = 'orden.html';
     })
 }
-// Agrega el enlace para consultar las compras.
-function configurarEnlaceHistorial() {
-    const cabecera = document.querySelector('.header-actions');
-    // Evita agregar el enlace si no hay sesión o si ya existe.
-    if (!usuarioActivo() || !cabecera || document.querySelector('#historyLink')) return;
-    const enlace = document.createElement('a');
-    enlace.id = 'historyLink';
-    enlace.href = 'orden.html?historial=1';
-    enlace.className = 'button button--ghost button--small';
-    enlace.textContent = 'Mis órdenes';
-    cabecera.prepend(enlace); // Coloca el enlace al inicio de la cabecera.
+// Conecta el botón Ver mis órdenes que ya existe en el catálogo.
+function configurarBotonHistorial() {
+    const boton = document.querySelector('#ordersButton');
+    // En otras páginas no existe este botón; termina sin hacer cambios.
+    if (!boton || !usuarioActivo()) return;
+
+    // Como es un botón y no un enlace, indicamos qué hacer al pulsarlo.
+    boton.addEventListener('click', () => {
+        // Abre únicamente la lista de compras del usuario conectado.
+        window.location.href = 'orden.html?historial=1';
+    });
 }
 // Convierte la fecha guardada en una fecha fácil de leer.
 function fechaOrden(fecha) {
@@ -1060,8 +1060,8 @@ if (protegerPaginas()) {
   cargarTarjetas();
   configurarCarrito();
   realizarPago();
-  // Agrega el acceso al historial y muestra las compras.
-  configurarEnlaceHistorial();
+  // Conecta el botón del catálogo y muestra las compras en la página de órdenes.
+  configurarBotonHistorial();
   configurarHistorial();
   actualizarPerfil();
 }
