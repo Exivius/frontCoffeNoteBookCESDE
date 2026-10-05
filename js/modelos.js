@@ -178,8 +178,8 @@ export class MetodoDePago {
 }
 
 export class Orden {
-    constructor(ordenId, clienteId, listaDeProductos, total, dia, estado, pagoId) {
-        this.ordenId = ordenId;
+    constructor(clienteId, listaDeProductos, total, dia, estado, pagoId) {
+        this.ordenId = `ORD-${Date.now()}`;
         this.clienteId = clienteId;
         this.listaDeProductos = listaDeProductos;
         this.total = total;
