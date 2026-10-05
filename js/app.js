@@ -966,6 +966,58 @@ function mostrarHistorial(ordenes) {
         seccion.append(resumen);
     });
 }
+
+function actualizarPerfil(){
+  //recuperamos el id del formulario que alberga los datos y guardamos el usuario activo
+  const formulario = document.querySelector('#profileForm');
+  const usuario = usuarioActivo();
+  //Si el formulatio no existe y no hay usuario activo, detiene la función
+  if(!formulario || !usuario) return;
+  //Guardamos los usuario en un arreglo y buscamos especificamente el id del usuario activo
+  const datos = leer(CLAVES.usuarios, []).find((item) => item.id === usuario.id);
+  if(!datos) return;
+  //Generamos uan constante con los campos que vamos a buscar en el arreglo de usuario registrados
+  const campos = {
+    name: 'nombre',
+    userName: 'nombreDeUsuario',
+    email: 'correo',
+    address: 'dirección'
+  };
+  //Transformamos campos en un arreglo para recorrer las parejas del arreglo dentro del formulario con los campos
+  //que actualmente existen en el formulario
+  Object.entries(campos).forEach(([campo, propiedad]) => {formulario.elements[campo].value = datos[propiedad]});
+  formulario.addEventListener('submit', (evento) =>{
+    evento.preventDefault();
+    //Dado que ya guardamos los daros del formulario al principio de la funcion, guardamos esta misma información
+    //Para realizar la actualización en los mismos campos
+    const formularioDatos = new FormData(formulario);
+    //capturamos y guardamos la nueva contraseña que ingrese el usuario
+    const nuevaContrasena = formularioDatos.get('password').trim();
+    //creamos un nuevo objeto de cliente para guardar la nueva información ingresada por el usuario
+    const cliente = new Cliente({
+      ...datos,
+      nombre: formularioDatos.get('name').trim(),
+      nombreDeUsuario: formularioDatos.get('userName').trim(),
+      correo: formularioDatos.get('email').trim(),
+      direccion: formularioDatos.get('address').trim(),
+      contrasena: nuevaContrasena || datos.contrasena
+    });
+    if(!cliente.modificar()){
+      mostrarAdvertencia('El correo o nombre de usuario ya existe o esta registrado.', 'profilMessage');
+      return;
+    }
+    guardar(CLAVES.usuarioActivo, {
+      ...usuario,
+      nombre: cliente.nombre,
+      nombreDeUsuario: cliente.nombreDeUsuario,
+      correo: cliente.correo,
+      direccion: cliente.direccion,
+      contrasena: cliente.contrasena
+    });
+    mostrarAdvertencia('Datos actualizados correctamente.', 'profileMessage')
+  });
+}
+
 // Ejecuta las funciones correspondientes a cada página.
 if (protegerPaginas()) {
   configurarCabecera();
