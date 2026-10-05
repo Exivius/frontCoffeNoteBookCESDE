@@ -877,6 +877,8 @@ function configurarHistorial() {
 }
 // Llena los espacios que ya existen en orden.html.
 function mostrarDetalleOrden(orden, usuario) {
+    // El ID sigue guardado para identificar al comprador, pero no se muestra.
+    document.querySelector('#orderCustomerId').hidden = true;
     const metodo = orden.metodoDePago === 'contra entrega'
         ? 'Pago al recoger en tienda'
         : orden.metodoDePago || 'No disponible';
