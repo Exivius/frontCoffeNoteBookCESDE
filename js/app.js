@@ -802,7 +802,14 @@ function realizarPago() {
         const metodo = document.querySelector('input[name="method"]:checked').value;
         //Creamos un nuebo objeto de la clase orden, de modo que podamos guardar la información que sera mostrada
         //una vez el pago sea procesado
-        const orden = new Orden(usuario.id, carrito.listaDeProductos, carrito.calcularTotal(), new MetodoDePago(metodo));
+        const orden = new Orden(
+            usuario.id,
+            carrito.listaDeProductos,
+            carrito.calcularTotal(),
+            new Date(),
+            "Confirmada",
+            new MetodoDePago(null, metodo, usuario.id),
+        );
         //Traemos las ordenes que ya existan y las metemos a un arreglo para guardar la nueva orden
         const ordenes = leer(CLAVES.ordenes, []);
         //"empujamos" la nueva orden dentro de la lista de ordenes
@@ -819,9 +826,83 @@ function realizarPago() {
     })
 }
 
-//Falta por crear la funcionalidad del boton para el historial de las ordenes y el evento que se activa al dar click sobre
-//el boton del historial
-//Crear la clase que da funcionalidad al boton de "Finalizar compra"
+function generarOrden() {
+  // Verifica que esta página tenga el elemento principal de la orden.
+  // Como app.js se carga en varias páginas, evita ejecutar esta lógica fuera de orden.html.
+  if (!document.querySelector("#orderId")) return;
+
+  // Recuperamos y guardamos el usuario activo y la iltima orden la cual se genero al momento del pago
+  const usuario = usuarioActivo();
+  const orden = leer(CLAVES.ultimaOrden, null);
+  // Valida si no hay sesion, usuario u orden y no continua
+  if (!usuario || !orden || orden.clienteId !== usuario.id) return;
+  // Recuperamos los datos que queremos mostrar y los asignamos a los campos del HTML 
+  document.querySelector("#orderId").textContent = orden.ordenId;
+  document.querySelector("#orderDate").textContent = new Date(
+    orden.dia,
+  ).toLocaleString("es-CO");
+  document.querySelector("#orderCustomer").textContent = usuario.nombre;
+  document.querySelector("#orderPaymentMethod").textContent = orden.pagoId?.metodoDePago || "No especificado";
+  document.querySelector("#orderTotal").textContent = formatoMoneda.format(orden.total,);
+  //  Crea el HTML, Recorre los productos comprados y construye las filas de la tabla de detalle.
+  document.querySelector("#orderItems").innerHTML = orden.listaDeProductos
+    .map(
+      (item) =>
+        `<tr><td>${item.producto.nombre}</td><td>${item.cantidad}</td><td>${formatoMoneda.format(item.producto.precio)}</td><td>${formatoMoneda.format(item.producto.precio * item.cantidad)}</td></tr>`,
+    )
+    .join("");
+}
+
+function actualizarPerfil(){
+  //recuperamos el id del formulario que alberga los datos y guardamos el usuario activo
+  const formulario = document.querySelector('#profileForm');
+  const usuario = usuarioActivo();
+  //Si el formulatio no existe y no hay usuario activo, detiene la función
+  if(!formulario || !usuario) return;
+  //Guardamos los usuario en un arreglo y buscamos especificamente el id del usuario activo
+  const datos = leer(CLAVES.usuarios, []).find((item) => item.id === usuario.id);
+  if(!datos) return;
+  //Generamos uan constante con los campos que vamos a buscar en el arreglo de usuario registrados
+  const campos = {
+    name: 'nombre',
+    userName: 'nombreDeUsuario',
+    email: 'correo',
+    address: 'dirección'
+  };
+  //Transformamos campos en un arreglo para recorrer las parejas del arreglo dentro del formulario con los campos
+  //que actualmente existen en el formulario
+  Object.entries(campos).forEach(([campo, propiedad]) => {formulario.elements[campo].value = datos[propiedad]});
+  formulario.addEventListener('submit', (evento) =>{
+    evento.preventDefault();
+    //Dado que ya guardamos los daros del formulario al principio de la funcion, guardamos esta misma información
+    //Para realizar la actualización en los mismos campos
+    const formularioDatos = new FormData(formulario);
+    //capturamos y guardamos la nueva contraseña que ingrese el usuario
+    const nuevaContrasena = formularioDatos.get('password').trim();
+    //creamos un nuevo objeto de cliente para guardar la nueva información ingresada por el usuario
+    const cliente = new Cliente({
+      ...datos,
+      nombre: formularioDatos.get('name').trim(),
+      nombreDeUsuario: formularioDatos.get('userName').trim(),
+      correo: formularioDatos.get('email').trim(),
+      direccion: formularioDatos.get('address').trim(),
+      contrasena: nuevaContrasena || datos.contrasena
+    });
+    if(!cliente.modificar()){
+      mostrarAdvertencia('El correo o nombre de usuario ya existe o esta registrado.', 'profilMessage');
+      return;
+    }
+    guardar(CLAVES.usuarioActivo, {
+      ...usuario,
+      nombre: cliente.nombre,
+      nombreDeUsuario: cliente.nombreDeUsuario,
+      correo: cliente.correo,
+      direccion: cliente.direccion,
+      contrasena: cliente.contrasena
+    });
+    mostrarAdvertencia('Datos actualizados correctamente.', 'profileMessage')
+  });
+}
 
 //localStorage.clear();
 
@@ -832,4 +913,6 @@ if (protegerPaginas()) {
   cargarTarjetas();
   configurarCarrito();
   realizarPago();
+  generarOrden();
+  actualizarPerfil();
 }
