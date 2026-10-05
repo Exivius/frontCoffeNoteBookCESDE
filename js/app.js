@@ -802,8 +802,15 @@ function realizarPago() {
         const metodo = document.querySelector('input[name="method"]:checked').value;
         //Creamos un nuebo objeto de la clase orden, de modo que podamos guardar la información que sera mostrada
         //una vez el pago sea procesado
-        const orden = new Orden(usuario.id, carrito.listaDeProductos, carrito.calcularTotal(), new MetodoDePago(metodo));
-        //Traemos las ordenes que ya existan y las metemos a un arreglo para guardar la nueva orden
+        // Crea la orden con los datos de esta compra.
+        // modelos.js genera automáticamente su identificación.
+        const orden = new Orden(usuario.id,carrito.listaDeProductos,carrito.calcularTotal(),new Date().toISOString(),'confirmada',null                         
+        );
+        // Guarda el método elegido para mostrarlo en el historial.
+        // Esto no procesa ni confirma un pago.
+        orden.metodoDePago = metodo;
+        // Guarda la tienda donde se recogerá esta compra.
+        orden.sedeRecogida = usuario.direccion;
         const ordenes = leer(CLAVES.ordenes, []);
         //"empujamos" la nueva orden dentro de la lista de ordenes
         ordenes.push(orden);
@@ -818,13 +825,148 @@ function realizarPago() {
         window.location.href = 'orden.html';
     })
 }
+// Agrega el enlace para consultar las compras.
+function configurarEnlaceHistorial() {
+    const cabecera = document.querySelector('.header-actions');
+    // Evita agregar el enlace si no hay sesión o si ya existe.
+    if (!usuarioActivo() || !cabecera || document.querySelector('#historyLink')) return;
+    const enlace = document.createElement('a');
+    enlace.id = 'historyLink';
+    enlace.href = 'orden.html?historial=1';
+    enlace.className = 'button button--ghost button--small';
+    enlace.textContent = 'Mis órdenes';
+    cabecera.prepend(enlace); // Coloca el enlace al inicio de la cabecera.
+}
+// Convierte la fecha guardada en una fecha fácil de leer.
+function fechaOrden(fecha) {
+    const fechaConvertida = new Date(typeof fecha === 'string' ? fecha : NaN);
+    return Number.isNaN(fechaConvertida.getTime())
+        ? 'No disponible'
+        : fechaConvertida.toLocaleString('es-CO');
+}
+// Selecciona las compras del usuario y organiza la pantalla.
+function configurarHistorial() {
+    const tabla = document.querySelector('#orderItems');
+    const usuario = usuarioActivo();
+    // Solo trabaja en orden.html y con sesión iniciada.
+    if (!tabla || !usuario) return;
+    // Oculta el QR de ejemplo al consultar las órdenes.
+    const bloqueQr = document.querySelector('.order-qr');
+    if (bloqueQr) bloqueQr.hidden = true;
+    const ordenes = leer(CLAVES.ordenes, []);
+    // Selecciona las compras del usuario y coloca primero las más recientes.
+    const misOrdenes = (Array.isArray(ordenes) ? ordenes : [])
+        .filter(orden => orden && orden.clienteId === usuario.id)
+        .reverse();
+    // Lee los datos que vienen en la dirección de la página.
+    const parametros = new URLSearchParams(window.location.search);
+    const id = parametros.get('id');
+    const soloHistorial = parametros.get('historial') === '1';
+    // Busca la compra solicitada o toma la más reciente.
+    const orden = id ? misOrdenes.find(compra => compra.ordenId === id) : misOrdenes[0];
+    // Oculta el detalle si solo queremos la lista o no encontramos la orden.
+    document.querySelector('.order-card').hidden = soloHistorial || !orden;
+    let titulo = 'Orden no disponible';
+    if (soloHistorial) titulo = 'Mis órdenes';
+    else if (orden) titulo = 'Orden confirmada';
+    document.querySelector('.order-hero h1').textContent = titulo;
+    document.querySelector('.order-hero p:last-child').textContent =
+        'Consulta aquí tus compras y sus productos.';
+    if (orden && !soloHistorial) mostrarDetalleOrden(orden, usuario);
+    mostrarHistorial(misOrdenes);
+}
+// Llena los espacios que ya existen en orden.html.
+function mostrarDetalleOrden(orden, usuario) {
+    const metodo = orden.metodoDePago === 'contra entrega'
+        ? 'Pago al recoger en tienda'
+        : orden.metodoDePago || 'No disponible';
+    // Relaciona cada espacio del HTML con el dato que debe mostrar.
+    const datos = {
+        orderId: orden.ordenId,
+        orderDate: fechaOrden(orden.dia),
+        orderStatus: orden.estado || 'No disponible',
+        orderCustomer: usuario.nombre,
+        orderCustomerId: `ID ${usuario.id}`,
+        orderPaymentMethod: metodo,
+        orderTotal: formatoMoneda.format(orden.total)
+    };
+    // Recorre las parejas de identificador y valor para escribir cada dato.
+    Object.entries(datos).forEach(([id, valor]) => {
+        document.getElementById(id).textContent = valor;
+    });
+    // Una orden confirmada puede tener el pago pendiente.
+    document.querySelector('.order-total > span').textContent = 'Total de la orden';
 
-//Falta por crear la funcionalidad del boton para el historial de las ordenes y el evento que se activa al dar click sobre
-//el boton del historial
-//Crear la clase que da funcionalidad al boton de "Finalizar compra"
+    // Agrega la sede al resumen sin modificar el archivo HTML.
+    let sede = document.querySelector('#orderStore');
+    if (!sede) {
+        sede = document.createElement('p');
+        sede.id = 'orderStore';
+        document.querySelector('.customer-summary').append(sede);
+    }
+    sede.textContent = `Recoger en: ${orden.sedeRecogida || 'No disponible'}`;
 
-//localStorage.clear();
-
+    const tabla = document.querySelector('#orderItems');
+    tabla.replaceChildren(); // Quita las filas anteriores y el texto Cargando.
+    const productos = Array.isArray(orden.listaDeProductos) ? orden.listaDeProductos : [];
+    // Agrega una fila por cada producto comprado.
+    productos.forEach(item => {
+        const fila = document.createElement('tr');
+        const valores = [
+            item.producto.nombre,
+            item.cantidad,
+            formatoMoneda.format(item.producto.precio),
+            formatoMoneda.format(item.producto.precio * item.cantidad)
+        ];
+        // Crea las celdas de nombre, cantidad, precio y subtotal.
+        valores.forEach(valor => {
+            const celda = document.createElement('td');
+            celda.textContent = valor;
+            fila.append(celda);
+        });
+        tabla.append(fila);
+    });
+}
+// Muestra una lista sencilla con las compras anteriores.
+function mostrarHistorial(ordenes) {
+    let seccion = document.querySelector('#historialOrdenes');
+    // Crea la sección del historial una sola vez.
+    if (!seccion) {
+        seccion = document.createElement('section');
+        seccion.id = 'historialOrdenes';
+        seccion.className = 'payment-panel';
+        // Separa el historial del detalle de la compra con un margen superior.
+        seccion.style.marginTop = '28px';
+        document.querySelector('.order-card').after(seccion);
+    }
+    seccion.replaceChildren(); // Evita repetir compras al mostrar la lista otra vez.
+    const titulo = document.createElement('h2');
+    titulo.textContent = 'Historial de órdenes';
+    seccion.append(titulo);
+    // Muestra un mensaje si todavía no hay compras.
+    if (!ordenes.length) {
+        const mensaje = document.createElement('p');
+        mensaje.textContent = 'Todavía no tienes compras registradas.';
+        seccion.append(mensaje);
+        return;
+    }
+    // Crea un resumen y un enlace por cada compra.
+    ordenes.forEach(orden => {
+        const resumen = document.createElement('p');
+        resumen.textContent = `${orden.ordenId} · ${fechaOrden(orden.dia)} · ` +
+            `${formatoMoneda.format(orden.total)} `;
+        const enlace = document.createElement('a');
+        // El ID permite abrir esa compra, aunque no sea la última.
+        enlace.href = `orden.html?id=${encodeURIComponent(orden.ordenId)}`;
+        // Usa el color de Carta Coffee-NoteBook, con letra normal y sin forma de botón.
+        enlace.style.color = 'var(--toast-dark)';
+        enlace.style.fontWeight = '400';
+        enlace.textContent = 'Ver detalle';
+        resumen.append(enlace);
+        seccion.append(resumen);
+    });
+}
+// Ejecuta las funciones correspondientes a cada página.
 if (protegerPaginas()) {
   configurarCabecera();
   configurarLogin();
@@ -832,4 +974,7 @@ if (protegerPaginas()) {
   cargarTarjetas();
   configurarCarrito();
   realizarPago();
+  // Agrega el acceso al historial y muestra las compras.
+  configurarEnlaceHistorial();
+  configurarHistorial();
 }
