@@ -804,7 +804,7 @@ function realizarPago() {
         //una vez el pago sea procesado
         // Crea la orden con los datos de esta compra.
         // modelos.js genera automáticamente su identificación.
-        const orden = new Orden(usuario.id,carrito.listaDeProductos,carrito.calcularTotal(),new Date().toISOString(),'confirmada',null                         
+        const orden = new Orden(usuario.id,carrito.listaDeProductos,carrito.calcularTotal(),new Date().toISOString(),'confirmada',null
         );
         // Guarda el método elegido para mostrarlo en el historial.
         // Esto no procesa ni confirma un pago.
@@ -825,17 +825,17 @@ function realizarPago() {
         window.location.href = 'orden.html';
     })
 }
-// Agrega el enlace para consultar las compras.
-function configurarEnlaceHistorial() {
-    const cabecera = document.querySelector('.header-actions');
-    // Evita agregar el enlace si no hay sesión o si ya existe.
-    if (!usuarioActivo() || !cabecera || document.querySelector('#historyLink')) return;
-    const enlace = document.createElement('a');
-    enlace.id = 'historyLink';
-    enlace.href = 'orden.html?historial=1';
-    enlace.className = 'button button--ghost button--small';
-    enlace.textContent = 'Mis órdenes';
-    cabecera.prepend(enlace); // Coloca el enlace al inicio de la cabecera.
+// Conecta el botón Ver mis órdenes que ya existe en el catálogo.
+function configurarBotonHistorial() {
+    const boton = document.querySelector('#ordersButton');
+    // En otras páginas no existe este botón; termina sin hacer cambios.
+    if (!boton || !usuarioActivo()) return;
+
+    // Como es un botón y no un enlace, indicamos qué hacer al pulsarlo.
+    boton.addEventListener('click', () => {
+        // Abre únicamente la lista de compras del usuario conectado.
+        window.location.href = 'orden.html?historial=1';
+    });
 }
 // Convierte la fecha guardada en una fecha fácil de leer.
 function fechaOrden(fecha) {
@@ -877,6 +877,8 @@ function configurarHistorial() {
 }
 // Llena los espacios que ya existen en orden.html.
 function mostrarDetalleOrden(orden, usuario) {
+    // El ID sigue guardado para identificar al comprador, pero no se muestra.
+    document.querySelector('#orderCustomerId').hidden = true;
     const metodo = orden.metodoDePago === 'contra entrega'
         ? 'Pago al recoger en tienda'
         : orden.metodoDePago || 'No disponible';
@@ -966,56 +968,90 @@ function mostrarHistorial(ordenes) {
         seccion.append(resumen);
     });
 }
+// Carga los datos del usuario y conecta el formulario para guardar sus cambios.
+function actualizarPerfil() {
+    const formulario = document.querySelector('#profileForm');
+    const usuario = usuarioActivo();
+    // Solo trabaja en el perfil y cuando hay una sesión iniciada.
+    if (!formulario || !usuario) return;
 
-function actualizarPerfil(){
-  //recuperamos el id del formulario que alberga los datos y guardamos el usuario activo
-  const formulario = document.querySelector('#profileForm');
-  const usuario = usuarioActivo();
-  //Si el formulatio no existe y no hay usuario activo, detiene la función
-  if(!formulario || !usuario) return;
-  //Guardamos los usuario en un arreglo y buscamos especificamente el id del usuario activo
-  const datos = leer(CLAVES.usuarios, []).find((item) => item.id === usuario.id);
-  if(!datos) return;
-  //Generamos uan constante con los campos que vamos a buscar en el arreglo de usuario registrados
-  const campos = {
-    name: 'nombre',
-    userName: 'nombreDeUsuario',
-    email: 'correo',
-    address: 'dirección'
-  };
-  //Transformamos campos en un arreglo para recorrer las parejas del arreglo dentro del formulario con los campos
-  //que actualmente existen en el formulario
-  Object.entries(campos).forEach(([campo, propiedad]) => {formulario.elements[campo].value = datos[propiedad]});
-  formulario.addEventListener('submit', (evento) =>{
-    evento.preventDefault();
-    //Dado que ya guardamos los daros del formulario al principio de la funcion, guardamos esta misma información
-    //Para realizar la actualización en los mismos campos
-    const formularioDatos = new FormData(formulario);
-    //capturamos y guardamos la nueva contraseña que ingrese el usuario
-    const nuevaContrasena = formularioDatos.get('password').trim();
-    //creamos un nuevo objeto de cliente para guardar la nueva información ingresada por el usuario
-    const cliente = new Cliente({
-      ...datos,
-      nombre: formularioDatos.get('name').trim(),
-      nombreDeUsuario: formularioDatos.get('userName').trim(),
-      correo: formularioDatos.get('email').trim(),
-      direccion: formularioDatos.get('address').trim(),
-      contrasena: nuevaContrasena || datos.contrasena
+    const datos = leer(CLAVES.usuarios, []).find(item => item.id === usuario.id);
+    if (!datos) return;
+
+    // A la izquierda está el nombre del campo; a la derecha, la propiedad guardada.
+    const campos = {
+        name: 'nombre',
+        userName: 'nombreDeUsuario',
+        email: 'correo',
+        address: 'direccion'
+    };
+    // Llena cada campo con los datos actuales del usuario.
+    Object.entries(campos).forEach(([campo, propiedad]) => {
+        formulario.elements[campo].value = datos[propiedad] || '';
     });
-    if(!cliente.modificar()){
-      mostrarAdvertencia('El correo o nombre de usuario ya existe o esta registrado.', 'profilMessage');
-      return;
-    }
-    guardar(CLAVES.usuarioActivo, {
-      ...usuario,
-      nombre: cliente.nombre,
-      nombreDeUsuario: cliente.nombreDeUsuario,
-      correo: cliente.correo,
-      direccion: cliente.direccion,
-      contrasena: cliente.contrasena
+
+    // Una contraseña vacía significa que desea conservar la anterior.
+    const campoContrasena = formulario.elements.password;
+    campoContrasena.required = false;
+    campoContrasena.placeholder = 'Déjala vacía para conservar la actual';
+
+    formulario.addEventListener('submit', evento => {
+        evento.preventDefault();
+        if (!formulario.checkValidity()) return formulario.reportValidity();
+
+        const formularioDatos = new FormData(formulario);
+        // No usamos trim: los espacios pueden formar parte de una contraseña.
+        const nuevaContrasena = formularioDatos.get('password') || '';
+        const usuarios = leer(CLAVES.usuarios, []);
+        const usuarioGuardado = usuarios.find(item => item.id === usuario.id);
+        if (!usuarioGuardado) {
+            mostrarAdvertencia('No se encontró el usuario.', 'profileMessage');
+            return;
+        }
+
+        const cliente = new Cliente({
+            ...usuarioGuardado,
+            nombre: formularioDatos.get('name').trim(),
+            nombreDeUsuario: formularioDatos.get('userName').trim(),
+            correo: formularioDatos.get('email').trim().toLowerCase(),
+            direccion: formularioDatos.get('address').trim(),
+            contrasena: nuevaContrasena || usuarioGuardado.contrasena
+        });
+        // Los espacios por sí solos no cuentan como un nombre válido.
+        if (!cliente.nombre || !cliente.nombreDeUsuario || !cliente.correo || !cliente.direccion) {
+            mostrarAdvertencia('Por favor completa todos los campos.', 'profileMessage');
+            return;
+        }
+
+        // Excluye al propio usuario al buscar datos repetidos.
+        const repetidos = usuarios.some(item => item.id !== usuario.id && (
+            item.correo.toLowerCase() === cliente.correo ||
+            item.nombreDeUsuario.toLowerCase() === cliente.nombreDeUsuario.toLowerCase()
+        ));
+        if (repetidos) {
+            mostrarAdvertencia('El correo o nombre de usuario ya están registrados.', 'profileMessage');
+            return;
+        }
+        // Este método guarda los cambios en la lista usuarios de localStorage.
+        if (!cliente.modificar()) {
+            mostrarAdvertencia('No se pudieron guardar los cambios.', 'profileMessage');
+            return;
+        }
+
+        // La sesión está en sessionStorage, igual que en el inicio de sesión.
+        // Guarda los datos personales sin copiar la contraseña a la sesión.
+        sessionStorage.setItem(CLAVES.usuarioActivo, JSON.stringify({
+            id: cliente.id,
+            nombre: cliente.nombre,
+            nombreDeUsuario: cliente.nombreDeUsuario,
+            correo: cliente.correo,
+            direccion: cliente.direccion
+        }));
+        const saludo = document.querySelector('#loggedUserName');
+        if (saludo) saludo.textContent = cliente.nombre;
+        campoContrasena.value = '';
+        mostrarAdvertencia('Datos actualizados correctamente.', 'profileMessage');
     });
-    mostrarAdvertencia('Datos actualizados correctamente.', 'profileMessage')
-  });
 }
 
 // Ejecuta las funciones correspondientes a cada página.
@@ -1026,7 +1062,8 @@ if (protegerPaginas()) {
   cargarTarjetas();
   configurarCarrito();
   realizarPago();
-  // Agrega el acceso al historial y muestra las compras.
-  configurarEnlaceHistorial();
+  // Conecta el botón del catálogo y muestra las compras en la página de órdenes.
+  configurarBotonHistorial();
   configurarHistorial();
+  actualizarPerfil();
 }
