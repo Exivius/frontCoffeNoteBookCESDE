@@ -158,7 +158,7 @@ h3 { margin-bottom: 8px; font-size: 1.15rem; }
 .order-qr h2 { margin-bottom: 8px; font-size: 1.15rem; }
 .order-qr p { margin-bottom: 6px; color: var(--coffee-soft); font-size: .87rem; }
 .order-qr small { color: var(--sage); font-size: .76rem; }
-.centered-button { display: flex; width: fit-content; margin: 28px auto 0; }
+.order-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin: 28px auto 0; }
 
 .site-footer { border-top: 1px solid var(--line); background: rgba(255, 250, 243, .35); }
 .footer-inner { min-height: 84px; color: var(--muted); font-size: .8rem; }

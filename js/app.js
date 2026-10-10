@@ -850,9 +850,7 @@ function configurarHistorial() {
     const usuario = usuarioActivo();
     // Solo trabaja en orden.html y con sesión iniciada.
     if (!tabla || !usuario) return;
-    // Oculta el QR de ejemplo al consultar las órdenes.
     const bloqueQr = document.querySelector('.order-qr');
-    if (bloqueQr) bloqueQr.hidden = true;
     const ordenes = leer(CLAVES.ordenes, []);
     // Selecciona las compras del usuario y coloca primero las más recientes.
     const misOrdenes = (Array.isArray(ordenes) ? ordenes : [])
@@ -866,6 +864,9 @@ function configurarHistorial() {
     const orden = id ? misOrdenes.find(compra => compra.ordenId === id) : misOrdenes[0];
     // Oculta el detalle si solo queremos la lista o no encontramos la orden.
     document.querySelector('.order-card').hidden = soloHistorial || !orden;
+    if (bloqueQr) bloqueQr.hidden = soloHistorial || !orden;
+    const botonHistorial = document.querySelector('#orderHistoryButton');
+    if (botonHistorial) botonHistorial.hidden = soloHistorial || !orden;
     let titulo = 'Orden no disponible';
     if (soloHistorial) titulo = 'Mis órdenes';
     else if (orden) titulo = 'Orden confirmada';
@@ -873,7 +874,7 @@ function configurarHistorial() {
     document.querySelector('.order-hero p:last-child').textContent =
         'Consulta aquí tus compras y sus productos.';
     if (orden && !soloHistorial) mostrarDetalleOrden(orden, usuario);
-    mostrarHistorial(misOrdenes);
+    if (soloHistorial) mostrarHistorial(misOrdenes);
 }
 // Llena los espacios que ya existen en orden.html.
 function mostrarDetalleOrden(orden, usuario) {
