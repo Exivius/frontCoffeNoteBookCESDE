@@ -6,6 +6,7 @@
   <meta name="description" content="Catálogo de desayunos, almuerzos y cenas de Coffee-NoteBook CESDE.">
   <title>Catálogo | Coffee-NoteBook CESDE</title>
   <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="./css/interacciones.css">
 </head>
 <body>
   <header class="site-header">
@@ -29,7 +30,7 @@
       </div>
       <div class="intro-actions">
         <button class="button button--secondary" id="ordersButton" type="button">Ver mis órdenes</button>
-        <a class="button button--primary" id="reviewCartButton" href="carrito.html">Revisar Carrito <span aria-hidden="true">→</span></a>
+        <a class="button button--primary" id="reviewCartButton" href="carrito.html"><span id="reviewCartLabel">Revisar carrito</span> <span aria-hidden="true">→</span></a>
       </div>
     </section>
     <section class="container catalog-section" aria-labelledby="catalog-title">
@@ -40,6 +41,7 @@
         </div>
         <span class="results-count" id="productCount">Productos disponibles</span>
       </div>
+      <p class="catalog-hint">Toca la imagen para sumar unidades. Al revisar el carrito se guardará tu selección.</p>
       <div class="product-grid" id="productList"></div>
       <p id="catalogMessage" class="form-message" role="status" aria-live="polite"></p>
       <p class="empty-state" id="catalogEmpty" hidden>No hay productos disponibles por ahora.</p>
@@ -48,5 +50,6 @@
   </main>
   <footer class="site-footer"><div class="container footer-inner"><p>© 2026 Coffee-NoteBook CESDE</p><nav aria-label="Enlaces del pie de página"><a href="#redes">Redes</a><a href="#legal">Legal</a><a href="mailto:contacto@coffee-notebook.co">Contacto</a></nav></div></footer>
   <script type="module" src="./js/app.js"></script>
+  <script type="module" src="./js/interacciones.js"></script>
 </body>
 </html>
