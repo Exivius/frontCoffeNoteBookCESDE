@@ -1,3 +1,4 @@
+import { configurarChatRecogida } from "./confirmacion-chat.js";
 import { configurarSimulacionNequi } from "./nequi.js";
 import Producto, {
   Almuerzo,
@@ -836,7 +837,7 @@ function realizarPago() {
         guardar(CLAVES.ultimaOrden, orden);
         //Limpiamos el carrito de compras
         guardar(`carrito_${usuario.id}`, []);
-        window.location.href = 'orden.html';
+        window.location.href = 'orden.html?compra=1';
     })
 }
 // Conecta el botón Ver mis órdenes que ya existe en el catálogo.
@@ -935,9 +936,9 @@ function mostrarDetalleOrden(orden, usuario) {
     document.querySelector('#chatOrderId').textContent = `#${orden.ordenId}`;
     document.querySelector('#chatOrderTotal').textContent = formatoMoneda.format(orden.total);
     document.querySelector('#pickupLocation').textContent = orden.sedeRecogida || 'la sede seleccionada';
-    const estimate = new Date();
+    const estimate = new Date(orden.dia);
     estimate.setMinutes(estimate.getMinutes() + 20);
-    document.querySelector('#pickupEstimate').textContent = `Hoy, ${estimate.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })} (aprox. 20 min)`;
+    document.querySelector('#pickupEstimate').textContent = `${estimate.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })} (aprox. 20 min desde la compra)`;
     const chatItems = document.querySelector('#chatOrderItems');
     chatItems.replaceChildren();
     (Array.isArray(orden.listaDeProductos) ? orden.listaDeProductos : []).forEach(item => {
@@ -950,6 +951,8 @@ function mostrarDetalleOrden(orden, usuario) {
         line.append(label, amount);
         chatItems.append(line);
     });
+
+    configurarChatRecogida(orden, usuario);
 
     const tabla = document.querySelector('#orderItems');
     tabla.replaceChildren(); // Quita las filas anteriores y el texto Cargando.

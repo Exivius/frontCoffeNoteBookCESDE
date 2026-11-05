@@ -253,3 +253,17 @@ h3 { margin-bottom: 8px; font-size: 1.15rem; }
 .nequi-demo__status[data-state="rechazada"] { background: #f8e4df; color: #893e30; }
 .nequi-demo__actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .nequi-demo__actions .button { flex: 1 1 160px; }
+
+/* Ventanas del flujo de compra y conversación local. */
+.app-window { position: fixed; inset: 0; margin: auto; width: min(92vw, 520px); max-height: 90dvh; overflow-y: auto; padding: 30px 24px; border: 0; border-radius: 24px; color: var(--coffee); background: #fffcf7; box-shadow: 0 24px 100px #21150c55; }
+.app-window::backdrop { background: #20171199; backdrop-filter: blur(4px); }
+.window-close { position: absolute; top: 8px; right: 12px; border: 0; border-radius: 50%; background: #ffffffda; color: #38291f; font-size: 28px; width: 36px; height: 36px; cursor: pointer; z-index: 1; }
+.nequi-window { border-top: 14px solid #b32479; background: #fff7fc; }
+.nequi-window h3 { color: #8b245d; font-size: 1.6rem; }
+.chat-window { width: min(94vw, 660px); padding: 0; }
+.chat-window .pickup-chat { margin: 0; border: 0; width: 100%; max-width: none; }
+.chat-window .pickup-chat__header { padding-right: 58px; }
+.chat-window .form-stack { margin-top: 20px; }
+.chat-window input { width: 100%; min-width: 0; padding: 12px; border: 1px solid #bdd0c7; border-radius: 10px; background: white; }
+.chat-bubble--reply { margin: 16px 0 12px auto; background: #d9f3ca; overflow-wrap: anywhere; white-space: pre-wrap; }
+@media (max-width: 560px) { .app-window { width: 94vw; padding: 28px 16px; } .chat-window { padding: 0; } }
