@@ -1,3 +1,4 @@
+import { configurarSimulacionNequi } from "./nequi.js";
 import Producto, {
   Almuerzo,
   CarroDeCompras,
@@ -763,8 +764,14 @@ function realizarPago() {
     resumen.innerHTML = `<h2>Detalle de compra</h2>${carrito.listaDeProductos.map((item) =>`<p class="summary-line"><span>${item.producto.nombre} x ${item.cantidad}</span><strong>${formatoMoneda.format(item.producto.precio * item.cantidad)}</strong></p>`).join('')}<div class="summary-total"><span>Total</span><strong>${formatoMoneda.format(carrito.calcularTotal())}</strong></div>`;
     const opciones = document.querySelectorAll('input[name="method"]');
     const camposTarjeta = document.querySelector('#cardFields');
+    const simulacionNequi = configurarSimulacionNequi(obtenerCarrito, formatoMoneda);
     const cambiarMetodo = () =>{
-        const esTarjeta = document.querySelector('input[name="method"]:checked')?.value === 'tarjeta';
+        const metodo = document.querySelector('input[name="method"]:checked')?.value;
+        const esTarjeta = metodo === 'tarjeta';
+        simulacionNequi.cambiarMetodo(metodo);
+        document.querySelector('#confirmPaymentLabel').textContent = metodo === 'nequi'
+            ? 'Confirmar pedido de demostración' : 'Confirmar pago';
+        mostrarAdvertencia('', 'paymentMessage');
         //oculta los campos de la tarjeta si el metodo seleccionado no es tarjeta
         if (!camposTarjeta) return;
         camposTarjeta.hidden = !esTarjeta;
@@ -779,10 +786,17 @@ function realizarPago() {
         evento.preventDefault();
         //Si el formulario no es valido, repota los errores que encuentra
         if(!formulario.checkValidity()) return formulario.reportValidity();
+        const metodo = document.querySelector('input[name="method"]:checked').value;
+        if (metodo === 'nequi') {
+            const error = simulacionNequi.validar();
+            if (error) return mostrarAdvertencia(error, 'paymentMessage');
+        }
+        // Nequi revisa el carrito actual, incluso si cambió en otra pestaña.
+        const carritoPago = metodo === 'nequi' ? obtenerCarrito() : carrito;
         //Guardamos en una constante los productos que existen
         const productos = obtenerProductos();
         //some valida los productos y valida si alguno tiene un error
-        const stockInsuficiente = carrito.listaDeProductos.some((item) => {
+        const stockInsuficiente = carritoPago.listaDeProductos.some((item) => {
             //find busca por cada producto en el carrito (item), el mismo item en la base de datos (productos)
             const producto = productos.find((actual) => actual.identificacion === item.producto.identificacion);
             //Determina si el stock es insuficiente si:
@@ -794,21 +808,21 @@ function realizarPago() {
             return;
         }
         //Toma los productos seleccinados por el usuario y busca el mismo ID en la BD para controlar el inventario
-        carrito.listaDeProductos.forEach((item) => {
+        carritoPago.listaDeProductos.forEach((item) => {
             const producto = productos.find((actual) => actual.identificacion === item.producto.identificacion);
             producto.actualizarStock(item.cantidad)
         });
         //Guarda el metodo seleccionado buscando en HTML un input con atributo method y que este seleccionado
-        const metodo = document.querySelector('input[name="method"]:checked').value;
         //Creamos un nuebo objeto de la clase orden, de modo que podamos guardar la información que sera mostrada
         //una vez el pago sea procesado
         // Crea la orden con los datos de esta compra.
         // modelos.js genera automáticamente su identificación.
-        const orden = new Orden(usuario.id,carrito.listaDeProductos,carrito.calcularTotal(),new Date().toISOString(),'confirmada',null
+        const orden = new Orden(usuario.id,carritoPago.listaDeProductos,carritoPago.calcularTotal(),new Date().toISOString(),metodo === 'nequi' ? 'demostración confirmada' : 'confirmada',null
         );
         // Guarda el método elegido para mostrarlo en el historial.
         // Esto no procesa ni confirma un pago.
-        orden.metodoDePago = metodo;
+        orden.metodoDePago = metodo === 'nequi' ? 'Nequi (simulación, sin cobro)' : metodo;
+        if (metodo === 'nequi') orden.simulacionPago = simulacionNequi.comprobante();
         // Guarda la tienda donde se recogerá esta compra.
         orden.sedeRecogida = usuario.direccion;
         const ordenes = leer(CLAVES.ordenes, []);
@@ -908,6 +922,13 @@ function mostrarDetalleOrden(orden, usuario) {
         document.querySelector('.customer-summary').append(sede);
     }
     sede.textContent = `Recoger en: ${orden.sedeRecogida || 'No disponible'}`;
+    if (orden.simulacionPago?.simulado && orden.simulacionPago.proveedor === 'Nequi') {
+        const aviso = document.createElement('p');
+        aviso.className = 'form-message';
+        aviso.textContent = `Demostración Nequi: no se movió dinero. Referencia de prueba: ${orden.simulacionPago.referencia}`;
+        sede.after(aviso);
+    }
+
 
     const tabla = document.querySelector('#orderItems');
     tabla.replaceChildren(); // Quita las filas anteriores y el texto Cargando.

@@ -218,3 +218,16 @@ h3 { margin-bottom: 8px; font-size: 1.15rem; }
   .auth-panel--form { padding-top: 30px; }
   .auth-copy h1 { font-size: 2.35rem; }
 }
+
+/* US07: simulación Nequi, conservando los componentes del checkout. */
+.option-icon--nequi { background: #f5dfeb; color: #8b245d; font-family: var(--font-display); font-weight: 800; }
+.nequi-demo { margin: 22px 0; padding: 22px; border: 1px solid #d9a7c3; border-radius: 12px; background: rgba(255, 250, 253, .7); }
+.nequi-demo__tag { display: inline-block; margin-bottom: 14px; background: #f5dfeb; color: #8b245d; }
+.nequi-demo > p, .nequi-demo__steps { color: var(--coffee-soft); font-size: .88rem; }
+.nequi-demo__steps { padding-left: 22px; }
+.nequi-demo__steps li + li { margin-top: 6px; }
+.nequi-demo__status { padding: 12px; border-radius: 8px; background: var(--cream); }
+.nequi-demo__status[data-state="aprobada"] { background: #e5eee7; color: #344c38; }
+.nequi-demo__status[data-state="rechazada"] { background: #f8e4df; color: #893e30; }
+.nequi-demo__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.nequi-demo__actions .button { flex: 1 1 160px; }
