@@ -278,5 +278,18 @@ h3 { margin-bottom: 8px; font-size: 1.15rem; }
 .pickup-product { padding: 20px; border: 1px solid var(--line); border-radius: 18px; background: var(--cream); }
 .pickup-product img { width: 100%; height: 210px; object-fit: cover; border-radius: 12px; }
 .pickup-product h2 { margin: 16px 0 8px; }
+@media (max-width: 640px) {
+  .cart-layout > .table-wrap { border: 0; box-shadow: none; background: transparent; overflow: visible; }
+  .cart-layout .cart-table { display: block; min-width: 0; }
+  .cart-layout .cart-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  #cartItems { display: grid; gap: 18px; }
+  #cartItems tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; padding: 20px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
+  #cartItems td { display: block; padding: 0; border: 0; min-width: 0; }
+  #cartItems td::before { content: attr(data-label); display: block; margin-bottom: 6px; color: var(--muted); font-size: .75rem; }
+  #cartItems td:first-child, #cartItems td:nth-child(4), #cartItems td:last-child { grid-column: 1 / -1; }
+  #cartItems td:first-child { font-weight: 700; font-size: 1.1rem; overflow-wrap: anywhere; }
+  #cartItems .quantity-control input { width: 100%; min-height: 44px; font-size: 1rem; }
+  #cartItems [data-action="remove-product"] { width: 100%; min-height: 46px; border-color: #d4aaa0; color: #943f2c; }
+}
 #pickupPayment { margin: 20px 0; font-weight: 600; }
 @media (max-width: 640px) { .order-qr { flex-direction: column; align-items: stretch; } .pickup-qr-link { margin: auto; } }
