@@ -1,3 +1,4 @@
+import { mostrarQrRecogida } from "./recogida.js";
 import { configurarChatRecogida } from "./confirmacion-chat.js";
 import { configurarSimulacionNequi } from "./nequi.js";
 import Producto, {
@@ -994,6 +995,7 @@ function mostrarDetalleOrden(orden, usuario) {
     });
 
     configurarChatRecogida(orden, usuario);
+    mostrarQrRecogida(orden);
 
     const tabla = document.querySelector('#orderItems');
     tabla.replaceChildren(); // Quita las filas anteriores y el texto Cargando.
