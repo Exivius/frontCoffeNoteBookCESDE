@@ -1,4 +1,5 @@
 import qrcode from './vendor/qrcode-generator.mjs';
+import { PUBLIC_SITE_URL } from './publicacion.js';
 
 const imagenes = { breakfast: './images/breakfast.png', lunch: './images/lunch.png', dinner: './images/dinner.png' };
 
@@ -21,7 +22,7 @@ export function mostrarQrRecogida(orden) {
   };
   const bytes = new TextEncoder().encode(JSON.stringify(pedido));
   const datos = btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(''));
-  const destino = new URL('./recogida.html', location.href);
+  const destino = new URL('./recogida.html', PUBLIC_SITE_URL);
   destino.searchParams.set('pedido', datos);
   const enlace = document.querySelector('#pickupGalleryLink');
   enlace.href = destino.href;
