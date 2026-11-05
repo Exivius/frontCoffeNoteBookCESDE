@@ -23,7 +23,7 @@ function initialize(session) {
   let signingOut = false;
 
   $("#adminShell").hidden = false;
-  $("#connectionStatus").title = `Servicio configurado: ${session.apiUrl}`;
+  $("#connectionStatus").title = `Base de datos: ${session.apiUrl}`;
   $("#adminName").textContent = session.admin.name || session.admin.email;
   for (const [key, config] of Object.entries(resources)) {
     const link = document.createElement("a");
@@ -76,7 +76,7 @@ function initialize(session) {
       if (!Array.isArray(result)) throw new Error("El servicio devolvió un listado inesperado. Intenta actualizar la sección.");
       records = result.filter((record) => record && typeof record === "object");
       loaded = true;
-      $("#connectionStatus").textContent = "Datos del servicio actualizados";
+      $("#connectionStatus").textContent = "Datos de Firebase actualizados";
       render();
     } catch (error) {
       if (sequence !== loadSequence || signingOut) return;
@@ -154,7 +154,7 @@ function initialize(session) {
         const cell = document.createElement("td");
         const actions = document.createElement("div");
         actions.className = "admin-row-actions";
-        for (const [label, handler, style] of [["Editar", () => openEditor(record), "secondary"], ["Eliminar", () => deleteRecord(record), "danger"]]) {
+        for (const [label, handler, style] of [["Editar", () => openEditor(record), "secondary"], [config.deactivate ? "Desactivar" : "Eliminar", () => deleteRecord(record), "danger"]]) {
           const button = document.createElement("button");
           button.type = "button";
           button.className = `button button--small button--${style}`;
@@ -205,11 +205,12 @@ function initialize(session) {
         if (item.type === "password") input.autocomplete = "new-password";
       }
       if (record && item.type !== "password") input.value = record[item.key] ?? "";
+      if (record && (item.key === "email" || item.key === "password")) { input.readOnly = true; input.title = "La persona administra sus credenciales desde su perfil"; }
       group.append(label, input);
       if (item.type === "password" && record) {
         const help = document.createElement("small");
         help.id = "passwordHelp";
-        help.textContent = "Déjala vacía para conservar la contraseña actual.";
+        help.textContent = "La contraseña se cambia desde el perfil de la persona.";
         input.setAttribute("aria-describedby", help.id);
         group.append(help);
       }
@@ -261,7 +262,7 @@ function initialize(session) {
     const config = resources[current];
     const id = record[config.id];
     if (id === undefined || id === null) { showNotice(notice, "El registro no tiene un identificador válido."); return; }
-    if (!window.confirm(`¿Eliminar ${config.singular} #${id}? Esta acción no se puede deshacer.`)) return;
+    if (!window.confirm(config.deactivate ? `¿Desactivar el acceso de ${config.singular} #${id}?` : `¿Eliminar ${config.singular} #${id}? Esta acción no se puede deshacer.`)) return;
     mutationBusy = true;
     $("#createButton").disabled = true;
     render();
@@ -270,7 +271,7 @@ function initialize(session) {
       await api.request(`/${resource}/${encodeURIComponent(id)}`, { method: "DELETE" });
       if (current === resource) {
         await load();
-        if (loaded) showNotice(notice, "Registro eliminado correctamente.", "success");
+        if (loaded) showNotice(notice, config.deactivate ? "Cuenta desactivada correctamente." : "Registro eliminado correctamente.", "success");
       }
     } catch (error) { if (current === resource) handleError(error); }
     finally { mutationBusy = false; $("#createButton").disabled = !loaded; if (loaded) render(); }

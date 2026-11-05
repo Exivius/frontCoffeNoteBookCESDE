@@ -1,0 +1,76 @@
+{
+  "products": [
+    {
+      "identificacion": "breakfast",
+      "nombre": "Combo CESDE",
+      "descripcion": "huevos al gusto con tostada y bebida caliente",
+      "precio": 8550,
+      "stock": 20,
+      "categoria": "Desayuno",
+      "huevosPreparados": "Revueltos",
+      "tipoDePan": "tajado tostado",
+      "tipoDeLeche": "Entera",
+      "incluyeFruta": true,
+      "lastOrderId": ""
+    },
+    {
+      "identificacion": "lunch",
+      "nombre": "Almuerzo del dia",
+      "descripcion": "Menu especial para estudiantes",
+      "precio": 12500,
+      "stock": 25,
+      "categoria": "Almuerzo",
+      "tipoDeProteina": "Pechuga a la plancha",
+      "terminoDeCarne": "Bien asada",
+      "guarnicion": "salsa BBQ",
+      "sopaDelDia": "crema de tomate",
+      "lastOrderId": ""
+    },
+    {
+      "identificacion": "Dinner",
+      "nombre": "Sandwich de pollo",
+      "descripcion": "Opción ligera para jornada nocturna",
+      "precio": 11000,
+      "stock": 21,
+      "categoria": "Cena",
+      "tipoDePreparacion": "rapida",
+      "lastOrderId": ""
+    }
+  ],
+  "places": [
+    {
+      "placeId": "centro",
+      "placeName": "Centro",
+      "placeType": "Punto de venta"
+    },
+    {
+      "placeId": "bello",
+      "placeName": "Bello",
+      "placeType": "Punto de entrega"
+    },
+    {
+      "placeId": "rionegro",
+      "placeName": "Rionegro",
+      "placeType": "Punto de entrega"
+    },
+    {
+      "placeId": "bogota",
+      "placeName": "Bogotá",
+      "placeType": "Punto de entrega"
+    }
+  ],
+  "paymentMethods": [
+    {
+      "methodId": "cash",
+      "methodName": "Contra entrega"
+    },
+    {
+      "methodId": "card",
+      "methodName": "Tarjeta (simulación)"
+    },
+    {
+      "methodId": "nequi",
+      "methodName": "Nequi (simulación)"
+    }
+  ]
+}

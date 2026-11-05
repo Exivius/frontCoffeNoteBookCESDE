@@ -23,7 +23,7 @@
         <p>Regístrate para guardar tus datos y pedir más rápido.</p>
       </div>
       <!-- Contenedor principal que contiene el formulario. -->
-      <form class="form-stack" id="registerForm">
+      <form class="form-stack" id="registerForm" method="post">
         <div class="form-grid form-grid--two">
           <div class="field-group">
             <label for="name">Nombre completo</label>
@@ -54,7 +54,7 @@
           <small class="field-hint">Usa al menos 8 caracteres.</small>
         </div>
         <p id="registerMessage" class="form-message" role="status" aria-live="polite"></p>
-        <button class="button button--primary button--full" type="submit">Confirmar registro <span aria-hidden="true">→</span></button>
+        <button class="button button--primary button--full" type="submit" disabled>Confirmar registro <span aria-hidden="true">→</span></button>
       </form>
       <p class="auth-switch">¿Ya tienes cuenta? <a href="index.html">Volver al login</a></p>
     </section>

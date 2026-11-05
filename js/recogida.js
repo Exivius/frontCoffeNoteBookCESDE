@@ -29,6 +29,7 @@ export function mostrarQrRecogida(orden) {
     productos: (orden.listaDeProductos || []).map(item => ({
       id: String(item.producto.identificacion).toLowerCase(),
       nombre: item.producto.nombre,
+      imagen: ({ Desayuno: "breakfast", Almuerzo: "lunch", Cena: "dinner" })[item.producto.categoria] || String(item.producto.identificacion).toLowerCase(),
       cantidad: item.cantidad,
     })),
   };
@@ -80,7 +81,7 @@ if (galeria) {
           || producto.cantidad < 1 || producto.cantidad > 10000) throw new Error('El detalle de productos no es válido.');
       const tarjeta = document.createElement('article');
       tarjeta.className = 'pickup-product';
-      const imagen = Object.hasOwn(imagenes, producto.id) ? imagenes[producto.id] : null;
+      const imagen = Object.hasOwn(imagenes, producto.imagen || producto.id) ? imagenes[producto.imagen || producto.id] : null;
       if (imagen) {
         const foto = document.createElement('img');
         foto.src = imagen;

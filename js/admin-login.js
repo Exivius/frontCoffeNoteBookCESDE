@@ -3,8 +3,8 @@ import { AdminApi, API_URL_KEY, SESSION_KEY, getApiUrl, normalizeApiUrl, readSes
 const form = document.querySelector("#adminLoginForm");
 const notice = document.querySelector("#loginNotice");
 const submit = document.querySelector("#loginSubmit");
-const urlInput = document.querySelector("#apiUrl");
-urlInput.value = getApiUrl();
+submit.disabled = false;
+
 if (readSession()) window.location.replace("admin.html");
 const reason = new URLSearchParams(window.location.search).get("reason");
 if (reason === "expired") showNotice(notice, "Tu sesión terminó. Ingresa de nuevo para continuar.");
@@ -34,15 +34,4 @@ form.addEventListener("submit", async (event) => {
     submit.disabled = false;
     submit.textContent = "Ingresar al panel →";
   }
-});
-
-document.querySelector("#connectionForm").addEventListener("submit", (event) => {
-  event.preventDefault();
-  try {
-    const value = normalizeApiUrl(urlInput.value.trim());
-    localStorage.setItem(API_URL_KEY, value);
-    sessionStorage.removeItem(SESSION_KEY);
-    urlInput.value = value;
-    showNotice(notice, "Dirección guardada. Ya puedes iniciar sesión.", "success");
-  } catch (error) { showNotice(notice, error.message); }
 });
