@@ -930,6 +930,27 @@ function mostrarDetalleOrden(orden, usuario) {
     }
 
 
+    // Completa la vista de conversación con los datos guardados de esta orden.
+    document.querySelector('#chatCustomerName').textContent = usuario.nombre;
+    document.querySelector('#chatOrderId').textContent = `#${orden.ordenId}`;
+    document.querySelector('#chatOrderTotal').textContent = formatoMoneda.format(orden.total);
+    document.querySelector('#pickupLocation').textContent = orden.sedeRecogida || 'la sede seleccionada';
+    const estimate = new Date();
+    estimate.setMinutes(estimate.getMinutes() + 20);
+    document.querySelector('#pickupEstimate').textContent = `Hoy, ${estimate.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })} (aprox. 20 min)`;
+    const chatItems = document.querySelector('#chatOrderItems');
+    chatItems.replaceChildren();
+    (Array.isArray(orden.listaDeProductos) ? orden.listaDeProductos : []).forEach(item => {
+        const line = document.createElement('div');
+        line.className = 'chat-order-item';
+        const label = document.createElement('span');
+        label.textContent = `${item.cantidad} × ${item.producto.nombre}`;
+        const amount = document.createElement('strong');
+        amount.textContent = formatoMoneda.format(item.producto.precio * item.cantidad);
+        line.append(label, amount);
+        chatItems.append(line);
+    });
+
     const tabla = document.querySelector('#orderItems');
     tabla.replaceChildren(); // Quita las filas anteriores y el texto Cargando.
     const productos = Array.isArray(orden.listaDeProductos) ? orden.listaDeProductos : [];

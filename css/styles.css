@@ -158,6 +158,28 @@ h3 { margin-bottom: 8px; font-size: 1.15rem; }
 .order-qr h2 { margin-bottom: 8px; font-size: 1.15rem; }
 .order-qr p { margin-bottom: 6px; color: var(--coffee-soft); font-size: .87rem; }
 .order-qr small { color: var(--sage); font-size: .76rem; }
+.pickup-chat { max-width: 620px; margin: 30px auto 0; overflow: hidden; border: 1px solid rgba(37, 62, 60, .16); border-radius: 18px; background: #efe9df; box-shadow: 0 12px 32px rgba(50, 53, 44, .1); }
+.pickup-chat__header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: #315c50; color: #fffaf2; }
+.pickup-chat__avatar { display: grid; width: 42px; height: 42px; flex: 0 0 42px; place-items: center; border: 2px solid rgba(255,255,255,.35); border-radius: 50%; background: #f0c27a; color: #315c50; font-family: var(--font-display); font-size: .72rem; font-weight: 800; }
+.pickup-chat__header h2 { margin: 0 0 2px; color: #fffaf2; font-family: inherit; font-size: .96rem; }
+.pickup-chat__header p { margin: 0; color: rgba(255,250,242,.76); font-size: .72rem; }
+.pickup-chat__online { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; background: #9ed49e; }
+.pickup-chat__visual-label { margin-left: auto; border: 1px solid rgba(255,255,255,.3); border-radius: 99px; padding: 5px 9px; color: rgba(255,250,242,.8); font-size: .64rem; text-transform: uppercase; letter-spacing: .06em; }
+.pickup-chat__body { display: grid; gap: 14px; min-height: 260px; padding: 17px clamp(14px, 5vw, 38px) 20px; background-color: #eee9df; background-image: radial-gradient(rgba(67, 89, 75, .07) .7px, transparent .7px); background-size: 13px 13px; }
+.pickup-chat__date { justify-self: center; margin: 0; border-radius: 99px; padding: 5px 11px; background: rgba(255,255,255,.72); color: var(--muted); font-size: .67rem; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.chat-bubble { position: relative; width: min(100%, 430px); border-radius: 4px 15px 15px 15px; padding: 14px 15px 22px; background: #fffdf8; color: var(--coffee); box-shadow: 0 2px 5px rgba(0,0,0,.08); }
+.chat-bubble p { margin: 0 0 9px; font-size: .84rem; line-height: 1.48; }
+.chat-order-summary { display: grid; gap: 7px; margin: 12px 0 10px; border-top: 1px solid var(--line); padding-top: 10px; }
+.chat-order-item, .chat-order-total { display: flex; justify-content: space-between; gap: 12px; color: var(--coffee-soft); font-size: .76rem; }
+.chat-order-item strong, .chat-order-total strong { color: var(--coffee); white-space: nowrap; }
+.chat-order-total { border-top: 1px dashed var(--line); padding-top: 9px; font-weight: 700; }
+.chat-time { position: absolute; right: 11px; bottom: 6px; color: #8c9188; font-size: .62rem; }
+.chat-bubble--pickup { display: flex; align-items: flex-start; gap: 11px; border-radius: 15px 4px 15px 15px; justify-self: end; background: #e0f2d8; }
+.pickup-icon { display: grid; width: 25px; height: 25px; flex: 0 0 25px; place-items: center; border-radius: 50%; background: #60866b; color: white; font-size: .75rem; }
+.chat-bubble--pickup strong { display: block; margin-bottom: 4px; font-size: .8rem; }
+.chat-bubble--pickup p { margin-bottom: 3px; color: #315c50; font-weight: 800; }
+.chat-bubble--pickup small { color: #657568; font-size: .7rem; }
+.pickup-chat__note { margin: 0; color: var(--muted); font-size: .67rem; text-align: center; }
 .order-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin: 28px auto 0; }
 
 .site-footer { border-top: 1px solid var(--line); background: rgba(255, 250, 243, .35); }
