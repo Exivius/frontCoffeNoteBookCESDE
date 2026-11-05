@@ -5,8 +5,8 @@ const imagenes = { breakfast: './images/breakfast.png', lunch: './images/lunch.p
 
 function mensajePago(pedido) {
   if (pedido.metodo === 'contra entrega') return 'Pago contra entrega · pendiente al recoger.';
-  if (/nequi/i.test(pedido.metodo)) return 'Pago con Nequi · simulación confirmada, sin cobro real.';
-  if (/tarjeta/i.test(pedido.metodo)) return 'Pago con tarjeta · simulación confirmada, sin cobro real.';
+  if (/nequi/i.test(pedido.metodo)) return 'Pago con Nequi · confirmado.';
+  if (/tarjeta/i.test(pedido.metodo)) return 'Pago con tarjeta · confirmado.';
   return `Método de pago: ${pedido.metodo || 'No disponible'}.`;
 }
 

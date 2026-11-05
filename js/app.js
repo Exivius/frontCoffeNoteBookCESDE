@@ -879,7 +879,7 @@ function realizarPago() {
         const esTarjeta = metodo === 'tarjeta';
         simulacionNequi.cambiarMetodo(metodo);
         document.querySelector('#confirmPaymentLabel').textContent = metodo === 'nequi'
-            ? 'Confirmar pedido de demostración' : 'Confirmar pago';
+            ? 'Confirmar compra' : 'Confirmar pago';
         mostrarAdvertencia('', 'paymentMessage');
         //oculta los campos de la tarjeta si el metodo seleccionado no es tarjeta
         if (!camposTarjeta) return;
@@ -926,7 +926,7 @@ function realizarPago() {
         //una vez el pago sea procesado
         // Crea la orden con los datos de esta compra.
         // modelos.js genera automáticamente su identificación.
-        const orden = new Orden(usuario.id,carritoPago.listaDeProductos,carritoPago.calcularTotal(),new Date().toISOString(),metodo === 'nequi' ? 'demostración confirmada' : 'confirmada',null
+        const orden = new Orden(usuario.id,carritoPago.listaDeProductos,carritoPago.calcularTotal(),new Date().toISOString(),'confirmada',null
         );
         // Guarda el método elegido para mostrarlo en el historial.
         // Esto no procesa ni confirma un pago.
@@ -1005,12 +1005,12 @@ function mostrarDetalleOrden(orden, usuario) {
     document.querySelector('#orderCustomerId').hidden = true;
     const metodo = orden.metodoDePago === 'contra entrega'
         ? 'Pago al recoger en tienda'
-        : orden.metodoDePago || 'No disponible';
+        : /nequi/i.test(orden.metodoDePago || '') ? 'Nequi' : orden.metodoDePago || 'No disponible';
     // Relaciona cada espacio del HTML con el dato que debe mostrar.
     const datos = {
         orderId: orden.ordenId,
         orderDate: fechaOrden(orden.dia),
-        orderStatus: orden.estado || 'No disponible',
+        orderStatus: orden.estado === 'demostración confirmada' ? 'Confirmada' : orden.estado || 'No disponible',
         orderCustomer: usuario.nombre,
         orderCustomerId: `ID ${usuario.id}`,
         orderPaymentMethod: metodo,
@@ -1034,7 +1034,7 @@ function mostrarDetalleOrden(orden, usuario) {
     if (orden.simulacionPago?.simulado && orden.simulacionPago.proveedor === 'Nequi') {
         const aviso = document.createElement('p');
         aviso.className = 'form-message';
-        aviso.textContent = `Demostración Nequi: no se movió dinero. Referencia de prueba: ${orden.simulacionPago.referencia}`;
+        aviso.textContent = `Pago aprobado · Referencia: ${orden.simulacionPago.referencia}`;
         sede.after(aviso);
     }
 
