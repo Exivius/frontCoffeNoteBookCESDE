@@ -5,6 +5,12 @@ export function configurarSimulacionNequi(obtenerCarrito, formatoMoneda) {
   const acciones = document.querySelector('#nequiActions');
   const solicitar = document.querySelector('#nequiRequest');
   const totalVisible = document.querySelector('#nequiTotal');
+  const ventana = document.querySelector('#nequiWindow');
+  document.querySelector('#openNequi').addEventListener('click', () => {
+    solicitar.click();
+    ventana.showModal();
+  });
+  document.querySelector('#closeNequi').addEventListener('click', () => ventana.close());
   let estado = 'inicial';
   let resumenAprobado = '';
   let referencia = '';
@@ -51,7 +57,9 @@ export function configurarSimulacionNequi(obtenerCarrito, formatoMoneda) {
       return;
     }
     referencia = `SIM-NEQUI-${Date.now()}`;
-    mostrarEstado('aprobada', 'Simulación aprobada. Ahora puedes confirmar el pedido de demostración. No se movió dinero.');
+    mostrarEstado('aprobada', 'Simulación aprobada. Regresando a tu compra…');
+    ventana.close();
+    document.querySelector('#paymentForm').requestSubmit();
   });
 
   document.querySelector('#nequiReject').addEventListener('click', () => {
@@ -64,10 +72,12 @@ export function configurarSimulacionNequi(obtenerCarrito, formatoMoneda) {
     if (estado !== 'pendiente') return;
     resumenAprobado = '';
     mostrarEstado('cancelada', 'Simulación cancelada. No se creó un pedido ni se modificó tu carrito.');
+    ventana.close();
   });
 
   return {
     cambiarMetodo(metodo) {
+      if (ventana.open) ventana.close();
       panel.hidden = metodo !== 'nequi';
       resumenAprobado = '';
       referencia = '';
