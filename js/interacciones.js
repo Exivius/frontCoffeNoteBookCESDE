@@ -41,7 +41,7 @@ control.onclick = () => {
   if (sonido) sonar();
 };
 actualizar();
-document.body.append(control);
+(document.querySelector('.site-footer .footer-inner') || document.body).append(control);
 document.addEventListener('click', evento => {
   const elemento = evento.target.closest('button,a,input,select,summary');
   if (!elemento || elemento === control || elemento.disabled) return;
