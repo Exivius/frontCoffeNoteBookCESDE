@@ -270,6 +270,13 @@ h3 { margin-bottom: 8px; font-size: 1.15rem; }
 .chat-bubble--reply { margin: 16px 0 12px auto; background: #d9f3ca; overflow-wrap: anywhere; white-space: pre-wrap; }
 @media (max-width: 560px) { .app-window { width: 94vw; padding: 28px 16px; } .chat-window { padding: 0; } }
 
-.anime-qr { display: block; flex-shrink: 0; width: 240px; max-width: 100%; background: white; border-radius: 8px; }
-.anime-qr img { display: block; width: 100%; height: auto; }
-.anime-qr:focus-visible { outline: 3px solid var(--toast); outline-offset: 4px; }
+
+.pickup-qr-link { display: block; width: 280px; max-width: 100%; background: white; }
+.pickup-qr-link svg { display: block; width: 100%; height: auto; }
+.pickup-qr-link:focus-visible { outline: 3px solid var(--toast); }
+.pickup-products { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 24px; }
+.pickup-product { padding: 20px; border: 1px solid var(--line); border-radius: 18px; background: var(--cream); }
+.pickup-product img { width: 100%; height: 210px; object-fit: cover; border-radius: 12px; }
+.pickup-product h2 { margin: 16px 0 8px; }
+#pickupPayment { margin: 20px 0; font-weight: 600; }
+@media (max-width: 640px) { .order-qr { flex-direction: column; align-items: stretch; } .pickup-qr-link { margin: auto; } }
