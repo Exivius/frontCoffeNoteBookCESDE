@@ -583,8 +583,8 @@ function configurarCarrito() {
         total.textContent = formatoMoneda.format(valorSubtotal);
 
         if (estaVacio) {
-            // Sin productos no hay enlace al pago.
-            botonPago.removeAttribute('href');
+            // Sin productos, continuar devuelve al menú para elegirlos.
+            botonPago.setAttribute('href', 'catalogo.html');
 
             // Recupera el mensaje original de carrito vacío.
             tabla.innerHTML = contenidoVacio;
@@ -789,6 +789,11 @@ function configurarCarrito() {
     botonPago.addEventListener('click', evento => {
         // Recupera el carrito guardado del usuario que tiene la sesión iniciada.
         const carrito = obtenerCarrito();
+        if (!carrito.listaDeProductos.length) {
+            evento.preventDefault();
+            window.location.assign('catalogo.html');
+            return;
+        }
         // validarCarrito devuelve un mensaje si hay un problema, o un texto vacío si todas sus comprobaciones pasan.
         const error = validarCarrito(carrito);
 
@@ -845,8 +850,8 @@ function realizarPago() {
   //Validamos que el dformulario tenga información y que el carrito de compras no este vacio
   if (!formulario) return;
   if(!carrito.listaDeProductos.length){
-    //Si el carrito esta vacio, regresa a la pagina del carrito
-    window.location.href = 'carrito.html';
+    // También protege el acceso directo al pago con un carrito vacío.
+    window.location.href = 'catalogo.html';
     return;
   }
   //Creamos un elemento HTML para mostrar el detalle de lo que se va a pagar
