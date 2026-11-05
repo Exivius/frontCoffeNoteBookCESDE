@@ -317,7 +317,7 @@ function cargarTarjetas() {
     .map((producto) => {
       const info = producto.mostrarDatos();
       return `<article class="product-card" data-category="${info.identificacion}">
-			<img class="product-image product-image--${info.identificacion.toLowerCase()}" src="${imagenesProductos[info.identificacion.toLowerCase()]}" alt="${info.nombre}" loading="lazy">
+			<button class="product-image-button" type="button" data-action="increase-quantity" data-product-id="${info.identificacion}" aria-label="Sumar una unidad de ${info.nombre}" title="Pulsa para sumar una unidad"><img class="product-image product-image--${info.identificacion.toLowerCase()}" src="${imagenesProductos[info.identificacion.toLowerCase()]}" alt="${info.nombre}" loading="lazy"></button>
 			<div class="product-card__body"><div class="product-card__topline"><span class="tag">${info.categoria}</span><span class="stock-label">${info.stock} disponibles</span></div>
 			<h3>${info.nombre}</h3><p>${info.descripcion}</p><div class="product-card__footer"><strong class="price">${formatoMoneda.format(info.precio)}</strong>
 			<div class="quantity-control"><label for="quantity-${info.identificacion}">Cantidad</label><input id="quantity-${info.identificacion}" type="number" min="0" max="${info.stock}" value="0" data-product-id="${info.identificacion}"></div>
@@ -329,6 +329,23 @@ function cargarTarjetas() {
   if (contador)
     contador.textContent = `${productos.length} productos disponibles`;
   lista.addEventListener("click", (evento) => {
+    const imagen = evento.target.closest('[data-action="increase-quantity"]');
+    if (imagen) {
+      const entrada = lista.querySelector(`input[data-product-id="${imagen.dataset.productId}"]`);
+      const producto = obtenerProductos().find(item => item.identificacion === imagen.dataset.productId);
+      if (!producto) return mostrarAdvertencia('Este producto ya no está disponible.', 'catalogMessage');
+      const cantidad = Number(entrada.value);
+      const siguiente = (Number.isInteger(cantidad) && cantidad >= 0 ? cantidad : 0) + 1;
+      const enCarrito = obtenerCarrito().listaDeProductos.find(item => item.producto.identificacion === producto.identificacion)?.cantidad || 0;
+      if (siguiente + enCarrito > producto.stock) {
+        mostrarAdvertencia('La cantidad seleccionada supera el stock disponible', 'catalogMessage');
+        return;
+      }
+      entrada.value = String(siguiente);
+      entrada.dispatchEvent(new Event('change', { bubbles: true }));
+      mostrarAdvertencia(`${producto.nombre}: ${siguiente} unidad${siguiente === 1 ? '' : 'es'} seleccionada${siguiente === 1 ? '' : 's'}.`, 'catalogMessage');
+      return;
+    }
     //target es el elemento html donde el cursor hace click
     //closest busca sobre el target la referencia a la que se le esta haciendo relación y ejecuta el evento
     const boton = evento.target.closest('[data-action="add-to-cart"]');
