@@ -5,7 +5,13 @@ export function configurarChatRecogida(orden, usuario) {
   const fecha = document.querySelector('#pickupTime');
   const respuesta = document.querySelector('#pickupReply');
   const estado = document.querySelector('#chatReplyStatus');
-  const abrir = () => { if (!ventana.open) ventana.showModal(); };
+  const clave = `chatMostrado_${usuario.id}_${orden.ordenId}`;
+  let aperturaPendiente;
+  const abrir = () => {
+    clearTimeout(aperturaPendiente);
+    if (!ventana.open) ventana.showModal();
+    sessionStorage.setItem(clave, '1');
+  };
   document.querySelector('#openOrderChat').onclick = abrir;
   document.querySelector('#closeOrderChat').onclick = () => ventana.close();
 
@@ -46,13 +52,17 @@ export function configurarChatRecogida(orden, usuario) {
       localStorage.setItem('ordenes', JSON.stringify(ordenes));
       mostrarConfirmacion(actual.confirmacionRecogida);
       estado.textContent = 'Respuesta guardada. Tu hora de recogida quedó confirmada en esta demostración.';
+      clearTimeout(aperturaPendiente);
+      ventana.close();
+      const confirmacionWeb = document.querySelector('#pickupConfirmation');
+      confirmacionWeb.tabIndex = -1;
+      confirmacionWeb.focus();
     } catch (error) { estado.textContent = error.message || 'No se pudo guardar tu confirmación.'; }
   };
 
   // Una vez por compra: el resumen se ve antes de abrir la conversación.
-  const clave = `chatMostrado_${usuario.id}_${orden.ordenId}`;
   if (new URLSearchParams(location.search).get('compra') === '1' && !sessionStorage.getItem(clave)) {
-    setTimeout(() => {
+    aperturaPendiente = setTimeout(() => {
       if (JSON.parse(sessionStorage.getItem('usuarioActual') || 'null')?.id !== usuario.id) return;
       abrir();
       sessionStorage.setItem(clave, '1');
