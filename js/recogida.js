@@ -10,6 +10,32 @@ function mensajePago(pedido) {
   return `Método de pago: ${pedido.metodo || 'No disponible'}.`;
 }
 
+function codificarPedido(pedido) {
+  const compactado = {
+    v: 2,
+    m: pedido.metodo,
+    n: pedido.nombreDueno,
+    s: pedido.sedeRecogida,
+    p: pedido.productos.map(producto => [producto.id, producto.nombre, producto.imagen, producto.cantidad]),
+  };
+  const bytes = new TextEncoder().encode(JSON.stringify(compactado));
+  return btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(''))
+    .replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
+}
+
+function decodificarPedido(datos) {
+  const base64 = datos.replaceAll('-', '+').replaceAll('_', '/');
+  const bytes = Uint8Array.from(atob(base64 + '='.repeat((4 - base64.length % 4) % 4)), character => character.charCodeAt(0));
+  const pedido = JSON.parse(new TextDecoder().decode(bytes));
+  if (pedido.v === 2) return {
+    metodo: pedido.m,
+    nombreDueno: pedido.n,
+    sedeRecogida: pedido.s,
+    productos: pedido.p?.map(([id, nombre, imagen, cantidad]) => ({ id, nombre, imagen, cantidad })),
+  };
+  return pedido;
+}
+
 // El QR comparte el nombre y la sede solicitados, sin correo, credenciales ni sesión.
 export function mostrarQrRecogida(orden) {
   let nombreDueno = '';
@@ -33,10 +59,8 @@ export function mostrarQrRecogida(orden) {
       cantidad: item.cantidad,
     })),
   };
-  const bytes = new TextEncoder().encode(JSON.stringify(pedido));
-  const datos = btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(''));
   const destino = new URL('./recogida.html', PUBLIC_SITE_URL);
-  destino.searchParams.set('pedido', datos);
+  destino.searchParams.set('pedido', codificarPedido(pedido));
   const enlace = document.querySelector('#pickupGalleryLink');
   enlace.href = destino.href;
   const contenedor = document.querySelector('#orderQr');
@@ -64,8 +88,7 @@ if (galeria) {
   try {
     const datos = new URLSearchParams(location.search).get('pedido');
     if (!datos || datos.length > 20000) throw new Error('El enlace del pedido no es válido.');
-    const bytes = Uint8Array.from(atob(datos), character => character.charCodeAt(0));
-    const pedido = JSON.parse(new TextDecoder().decode(bytes));
+    const pedido = decodificarPedido(datos);
     if (typeof pedido.metodo !== 'string' || pedido.metodo.length > 100
         || (pedido.nombreDueno !== undefined && (typeof pedido.nombreDueno !== 'string' || pedido.nombreDueno.length > 150))
         || (pedido.sedeRecogida !== undefined && (typeof pedido.sedeRecogida !== 'string' || pedido.sedeRecogida.length > 150))
