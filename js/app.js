@@ -619,6 +619,10 @@ function configurarCarrito() {
             const celdaCantidad = document.createElement('td');
             const celdaSubtotal = document.createElement('td');
             const celdaAccion = document.createElement('td');
+            celdaNombre.dataset.label = 'Producto';
+            celdaPrecio.dataset.label = 'Precio por unidad';
+            celdaCantidad.dataset.label = 'Cantidad';
+            celdaSubtotal.dataset.label = 'Subtotal';
 
             // Escribe el nombre del producto dentro de su celda. textContent lo muestra como texto, sin interpretarlo como HTML.
             celdaNombre.textContent = producto.nombre;
@@ -634,6 +638,7 @@ function configurarCarrito() {
             // type configura un campo numérico; min indica que la cantidad válida empieza en 1.
             // step hace que las flechas del campo aumenten o disminuyan la cantidad de una en una.
             entradaCantidad.type = 'number';
+            entradaCantidad.setAttribute('aria-label', `Cantidad de ${producto.nombre}`);
             entradaCantidad.min = '1';
             entradaCantidad.step = '1';
             // El máximo válido es el stock del catálogo. String convierte ese número a texto para el campo HTML.
@@ -667,7 +672,8 @@ function configurarCarrito() {
             botonEliminar.className =
                 'button button--ghost button--small';
             // Escribe Eliminar como texto visible dentro del botón.
-            botonEliminar.textContent = 'Eliminar';
+            botonEliminar.textContent = 'Eliminar producto';
+            botonEliminar.setAttribute('aria-label', `Eliminar ${producto.nombre} del carrito`);
             // Guarda dos datos en el botón: la acción que representa y la identificación del producto.
             // Estas etiquetas no eliminan nada todavía; el evento click las leerá cuando el usuario pulse el botón.
             botonEliminar.dataset.action = 'remove-product';
