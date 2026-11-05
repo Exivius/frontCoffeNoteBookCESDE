@@ -88,7 +88,7 @@ h3 { margin-bottom: 8px; font-size: 1.15rem; }
 .breadcrumb { display: flex; gap: 10px; margin-bottom: 38px; color: var(--muted); font-size: .82rem; }
 .breadcrumb a { color: var(--toast-dark); font-weight: 700; }
 .cart-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 28px; align-items: start; }
-.table-wrap { overflow-x: auto; border: 1px solid rgba(255,255,255,.72); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow); }
+.table-wrap { position: relative; min-width: 0; overflow-x: auto; border: 1px solid rgba(255,255,255,.72); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow); }
 .cart-table { width: 100%; border-collapse: collapse; min-width: 590px; text-align: left; }
 .cart-table th { padding: 17px 20px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: .72rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
 .cart-table td { padding: 18px 20px; border-bottom: 1px solid var(--line); font-size: .9rem; }

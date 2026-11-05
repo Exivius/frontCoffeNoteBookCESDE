@@ -322,13 +322,34 @@ function cargarTarjetas() {
 			<div class="product-card__body"><div class="product-card__topline"><span class="tag">${info.categoria}</span><span class="stock-label">${info.stock} disponibles</span></div>
 			<h3>${info.nombre}</h3><p>${info.descripcion}</p><div class="product-card__footer"><strong class="price">${formatoMoneda.format(info.precio)}</strong>
 			<div class="quantity-control"><label for="quantity-${info.identificacion}">Cantidad</label><input id="quantity-${info.identificacion}" type="number" min="0" max="${info.stock}" value="0" data-product-id="${info.identificacion}"></div>
-			<button class="button button--primary button--icon" type="button" data-action="add-to-cart" data-product-id="${info.identificacion}" aria-label="Agregar ${info.nombre} al carrito" title="Agregar producto al carrito" data-tooltip="Agregar producto al carrito">+</button></div></div></article>`;
+			<button class="button button--primary product-add-button" type="button" data-action="add-to-cart" data-product-id="${info.identificacion}" aria-label="Agregar ${info.nombre} al carrito" title="Agregar producto al carrito" data-tooltip="Agregar producto al carrito">Agregar al carrito</button></div></div></article>`;
     })
     .join(""); //join convierte el arreglo que muestra mal y lo transforma en HTML
   //Creamos un contador para mostrar los productos que hay disponibles para la compra
   const contador = document.querySelector("#productCount");
   if (contador)
     contador.textContent = `${productos.length} productos disponibles`;
+  function actualizarSeleccion() {
+    let pendientes = 0;
+    lista.querySelectorAll('input[data-product-id]').forEach(entrada => {
+      const cantidad = Number(entrada.value);
+      const imagen = lista.querySelector(`button[data-action="increase-quantity"][data-product-id="${entrada.dataset.productId}"]`);
+      if (Number.isInteger(cantidad) && cantidad > 0) {
+        imagen.dataset.quantity = String(cantidad);
+        imagen.closest('.product-card').classList.add('product-card--selected');
+        pendientes += cantidad;
+      } else {
+        delete imagen.dataset.quantity;
+        imagen.closest('.product-card').classList.remove('product-card--selected');
+      }
+    });
+    const unidades = obtenerCarrito().listaDeProductos.reduce((total, item) => total + item.cantidad, 0) + pendientes;
+    const etiqueta = document.querySelector('#reviewCartLabel');
+    if (etiqueta) etiqueta.textContent = unidades ? `Revisar carrito (${unidades})` : 'Revisar carrito';
+  }
+  lista.addEventListener('input', actualizarSeleccion);
+  lista.addEventListener('change', actualizarSeleccion);
+  actualizarSeleccion();
   lista.addEventListener("click", (evento) => {
     const imagen = evento.target.closest('[data-action="increase-quantity"]');
     if (imagen) {
@@ -390,6 +411,7 @@ function cargarTarjetas() {
     carrito.agregarProducto(producto, cantidadSeleccionada);
     guardarCarrito(carrito);
     entrada.value = "0";
+    actualizarSeleccion();
     mostrarAdvertencia(
       "Producto agregado exitosamente al carrito",
       "catalogMessage",
