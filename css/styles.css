@@ -68,6 +68,8 @@ h3 { margin-bottom: 8px; font-size: 1.15rem; }
 .product-card { overflow: hidden; border: 1px solid rgba(255,255,255,.7); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow); transition: transform .25s ease, box-shadow .25s ease; }
 .product-card:hover { transform: translateY(-5px); box-shadow: 0 28px 70px rgba(82, 53, 33, .17); }
 .product-image { display: block; width: 100%; height: 190px; object-fit: cover; }
+.product-image-button { display: block; width: 100%; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.product-image-button:focus-visible { outline: 3px solid var(--toast); outline-offset: -3px; }
 .product-image--breakfast { background: linear-gradient(135deg, #dd8d4b, #9e472a); }
 .product-image--lunch { background: linear-gradient(135deg, #7b8460, #374e48); }
 .product-image--dinner { background: linear-gradient(135deg, #566074, #273442); }
