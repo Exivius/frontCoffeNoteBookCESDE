@@ -1,4 +1,5 @@
-// Conversación local de demostración; no conecta con WhatsApp.
+import { saveConfirmation, cloudError } from './cloud.js';
+// Conversación del pedido persistida en Firebase; no conecta con WhatsApp.
 export function configurarChatRecogida(orden, usuario) {
   const ventana = document.querySelector('#orderChatWindow');
   const formulario = document.querySelector('#pickupReplyForm');
@@ -43,7 +44,7 @@ export function configurarChatRecogida(orden, usuario) {
   }
   mostrarConfirmacion(orden.confirmacionRecogida, orden.historialChat);
 
-  formulario.onsubmit = event => {
+  formulario.onsubmit = async event => {
     event.preventDefault();
     estado.textContent = '';
     fecha.min = fechaLocal(new Date());
@@ -53,25 +54,23 @@ export function configurarChatRecogida(orden, usuario) {
       estado.textContent = 'Selecciona una hora de recogida que no haya pasado.';
       return;
     }
+    const boton = formulario.querySelector('button[type="submit"]');
+    if (boton.disabled) return;
+    boton.disabled = true;
     try {
       const sesion = JSON.parse(sessionStorage.getItem('usuarioActual') || 'null');
       if (sesion?.id !== usuario.id) throw new Error('Tu sesión cambió. Inicia sesión de nuevo.');
-      const ordenes = JSON.parse(localStorage.getItem('ordenes') || '[]');
-      const actual = ordenes.find(item => item.ordenId === orden.ordenId && item.clienteId === usuario.id);
-      if (!actual) throw new Error('No se encontró esta compra en tu historial.');
-      const historial = Array.isArray(actual.historialChat) ? actual.historialChat
-        : actual.confirmacionRecogida ? [actual.confirmacionRecogida] : [];
-      actual.confirmacionRecogida = { id: crypto.randomUUID(), fecha: seleccion.toISOString(), mensaje: respuesta.value.trim(), confirmadaEn: new Date().toISOString() };
-      actual.historialChat = [...historial, actual.confirmacionRecogida];
-      localStorage.setItem('ordenes', JSON.stringify(ordenes));
+      const confirmacion = { id: crypto.randomUUID(), fecha: seleccion.toISOString(), mensaje: respuesta.value.trim(), confirmadaEn: new Date().toISOString() };
+      const actual = await saveConfirmation(orden.ordenId, confirmacion);
       mostrarConfirmacion(actual.confirmacionRecogida, actual.historialChat);
-      estado.textContent = 'Respuesta guardada. Tu hora de recogida quedó confirmada en esta demostración.';
+      estado.textContent = 'Respuesta enviada. Tu hora de recogida quedó confirmada.';
       clearTimeout(aperturaPendiente);
       ventana.close();
       const confirmacionWeb = document.querySelector('#pickupConfirmation');
       confirmacionWeb.tabIndex = -1;
       confirmacionWeb.focus();
-    } catch (error) { estado.textContent = error.message || 'No se pudo guardar tu confirmación.'; }
+    } catch (error) { estado.textContent = cloudError(error); }
+    finally { boton.disabled = false; }
   };
 
   // Una vez por compra: el resumen se ve antes de abrir la conversación.

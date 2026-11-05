@@ -211,61 +211,6 @@ export class Cliente {
         this.nombreDeUsuario = nombreDeUsuario;
     }
 
-    registrarse() {
-        const clienteAlmacenado = localStorage.getItem("usuarios");
-        const cliente = clienteAlmacenado ? JSON.parse(clienteAlmacenado) : [];
-
-        const clienteExistente = cliente.some((clienteActual) =>
-            clienteActual.nombreDeUsuario.toLowerCase() === this.nombreDeUsuario.toLowerCase() ||
-            clienteActual.correo.toLowerCase() === this.correo.toLowerCase()
-        );
-
-        if (clienteExistente) {
-            return false;
-        }
-
-        cliente.push({
-            id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
-            nombre: this.nombre,
-            correo: (this.correo ?? "").toLowerCase(),
-            direccion: this.direccion,
-            contrasena: this.contrasena,
-            nombreDeUsuario: this.nombreDeUsuario,
-            intentosFallidos: 0,
-            bloqueadoHasta: 0
-        });
-        localStorage.setItem("usuarios", JSON.stringify(cliente));
-        return true;
-    
-    }
-
-    
-    modificar() {
-        const clientes = JSON.parse(localStorage.getItem("usuarios") || "[]");
-
-        const index = clientes.findIndex(cliente =>
-            cliente.id === this.id || cliente.correo === this.correo
-        );
-
-        if (index === -1) {
-            return false;
-        }
-
-        clientes[index] = {
-            ...clientes[index],
-            nombre: this.nombre,
-            correo: this.correo,
-            direccion: this.direccion,
-            contrasena: this.contrasena,
-            nombreDeUsuario: this.nombreDeUsuario
-        };
-
-        localStorage.setItem("usuarios", JSON.stringify(clientes));
-        return true;
-    }
-
-    cerrarSesion() {
-        sessionStorage.removeItem("usuarioActual");
-    }
-
+    // Registro, autenticación y cambios de perfil se realizan en cloud.js.
+    // Este modelo ya no persiste contraseñas ni cuentas en localStorage.
 }

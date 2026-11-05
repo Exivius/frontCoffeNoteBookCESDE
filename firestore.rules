@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signed() { return request.auth != null; }
+    function active() { return signed() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.state == 'Activo'; }
+    function admin() { return active() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'Admin'; }
+    function own(uid) { return signed() && request.auth.uid == uid; }
+    function validProfile(data) {
+      return data.nombre is string && data.nombre.size() > 0 && data.nombre.size() <= 150
+        && data.nombreDeUsuario is string && data.nombreDeUsuario.size() > 0 && data.nombreDeUsuario.size() <= 150
+        && data.direccion is string && data.direccion.size() > 0 && data.direccion.size() <= 150
+        && data.correo is string && data.id is string && data.state in ['Activo', 'Inactivo'] && data.rol in ['User', 'Admin'];
+    }
+    match /users/{uid} {
+      allow get: if own(uid) || admin();
+      allow list: if admin();
+      allow create: if validProfile(request.resource.data) && (admin() || (own(uid) && request.resource.data.id == uid
+        && request.resource.data.rol == 'User' && request.resource.data.state == 'Activo'
+        && request.resource.data.correo == request.auth.token.email
+        && request.resource.data.keys().hasOnly(['id','nombre','correo','direccion','nombreDeUsuario','rol','state'])));
+      allow update: if validProfile(request.resource.data) && ((admin() && (uid != request.auth.uid || (request.resource.data.rol == 'Admin' && request.resource.data.state == 'Activo')))
+        || (own(uid) && active() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre','nombreDeUsuario','direccion'])));
+      allow delete: if false;
+    }
+    match /usernames/{name} {
+      allow get: if signed();
+      allow create: if signed() && request.resource.data.keys().hasOnly(['uid']) && (request.resource.data.uid == request.auth.uid || admin());
+      allow delete: if signed() && (resource.data.uid == request.auth.uid || admin());
+    }
+    match /carts/{uid} {
+      allow get: if own(uid) && active();
+      allow create, update: if own(uid) && active() && request.resource.data.keys().hasOnly(['items'])
+        && request.resource.data.items is list && request.resource.data.items.size() <= 9;
+      allow delete: if own(uid) && active();
+    }
+    function validProduct() { return request.resource.data.precio is number && request.resource.data.precio > 0
+      && request.resource.data.stock is int && request.resource.data.stock >= 0 && request.resource.data.nombre is string; }
+    match /products/{id} {
+      allow read: if true;
+      allow create: if admin() && validProduct();
+      allow delete: if admin();
+      allow update: if (admin() && validProduct()) || (active()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock','lastOrderId'])
+        && request.resource.data.stock is int && request.resource.data.stock >= 0
+        && getAfter(/databases/$(database)/documents/orders/$(request.resource.data.lastOrderId)).data.clienteId == request.auth.uid
+        && getAfter(/databases/$(database)/documents/orders/$(request.resource.data.lastOrderId)).data.createdAt == request.time
+        && request.resource.data.stock == resource.data.stock - getAfter(/databases/$(database)/documents/orders/$(request.resource.data.lastOrderId)).data.cantidadPorProducto[id]);
+    }
+    match /places/{id} { allow read: if true; allow write: if admin(); }
+    match /paymentMethods/{id} { allow read: if true; allow write: if admin(); }
+    function lineTotal(items, index) { return index < items.size() ? items[index].cantidad * items[index].producto.precio : 0; }
+    function validLine(order, index, id) {
+      let item = order.listaDeProductos[index];
+      let product = getAfter(/databases/$(database)/documents/products/$(item.producto.identificacion)).data;
+      return item.cantidad is int && item.cantidad > 0
+        && order.cantidadPorProducto[item.producto.identificacion] == item.cantidad
+        && item.producto.precio == product.precio && item.producto.nombre == product.nombre
+        && product.lastOrderId == id;
+    }
+    function validSlot(order, index, id) { return index >= order.listaDeProductos.size() || validLine(order, index, id); }
+    function validOrder(order, id) {
+      let items = order.listaDeProductos;
+      return order.clienteId == request.auth.uid && order.ordenId == id
+        && order.createdAt == request.time && order.nombreCliente is string && order.sedeRecogida is string
+        && order.dia is string && order.historialChat is list && order.historialChat.size() == 0 && order.confirmacionRecogida == null
+        && order.nombreCliente == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.nombre
+        && order.sedeRecogida == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.direccion
+        && order.metodoDePago in ['contra entrega', 'tarjeta', 'Nequi (simulación, sin cobro)']
+        && items is list && items.size() > 0 && items.size() <= 9
+        && order.cantidadPorProducto.size() == items.size()
+        && validSlot(order,0,id) && validSlot(order,1,id) && validSlot(order,2,id)
+        && validSlot(order,3,id) && validSlot(order,4,id) && validSlot(order,5,id)
+        && validSlot(order,6,id) && validSlot(order,7,id) && validSlot(order,8,id)
+        && order.total == lineTotal(items,0) + lineTotal(items,1) + lineTotal(items,2)
+          + lineTotal(items,3) + lineTotal(items,4) + lineTotal(items,5)
+          + lineTotal(items,6) + lineTotal(items,7) + lineTotal(items,8);
+    }
+    match /orders/{id} {
+      allow get: if active() && (resource == null || resource.data.clienteId == request.auth.uid || admin());
+      allow list: if active() && (resource.data.clienteId == request.auth.uid || admin());
+      allow create: if active() && validOrder(request.resource.data, id);
+      allow update: if active() && resource.data.clienteId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['confirmacionRecogida','historialChat'])
+        && request.resource.data.historialChat is list
+        && request.resource.data.historialChat.size() == resource.data.historialChat.size() + 1
+        && request.resource.data.historialChat.hasAll(resource.data.historialChat)
+        && request.resource.data.confirmacionRecogida == request.resource.data.historialChat[resource.data.historialChat.size()]
+        && request.resource.data.confirmacionRecogida.mensaje is string
+        && request.resource.data.confirmacionRecogida.mensaje.size() <= 300;
+      allow delete: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

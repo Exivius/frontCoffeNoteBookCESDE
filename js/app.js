@@ -1,3 +1,4 @@
+import * as cloud from "./cloud.js";
 import { mostrarQrRecogida } from "./recogida.js";
 import { configurarChatRecogida } from "./confirmacion-chat.js";
 import { configurarSimulacionNequi } from "./nequi.js";
@@ -5,9 +6,7 @@ import Producto, {
   Almuerzo,
   CarroDeCompras,
   Cena,
-  Cliente,
   Desayuno,
-  MetodoDePago,
   Orden,
 } from "./modelos.js";
 
@@ -20,41 +19,7 @@ const CLAVES = {
   ultimaOrden: "ultimaOrden",
 };
 
-const productosIniciales = [
-  {
-    identificacion: "breakfast",
-    nombre: "Combo CESDE",
-    descripcion: "huevos al gusto con tostada y bebida caliente",
-    precio: "8550",
-    stock: "20",
-    categoria: "Desayuno",
-    huevosPreparados: "Revueltos",
-    tipoDePan: "tajado tostado",
-    tipoDeLeche: "Entera",
-    incluyeFruta: true,
-  },
-  {
-    identificacion: "lunch",
-    nombre: "Almuerzo del dia",
-    descripcion: "Menu especial para estudiantes",
-    precio: "12500",
-    stock: "25",
-    categoria: "Almuerzo",
-    tipoDeProteina: "Pechuga a la plancha",
-    terminoDeCarne: "Bien asada",
-    guarnicion: "salsa BBQ",
-    sopaDelDia: "crema de tomate",
-  },
-  {
-    identificacion: "Dinner",
-    nombre: "Sandwich de pollo",
-    descripcion: "Opción ligera para jornada nocturna",
-    precio: "11000",
-    stock: "21",
-    categoria: "Cena",
-    tipoDePreparacion: "rapida",
-  },
-];
+
 
 //constante para ller el JSON en el local storage y devolver un valor inicial si no existe
 //Evita que cada que se inicia la aplicación se creen nuevamente los valores iniciales para los productos del carrito
@@ -145,11 +110,8 @@ function crearProductos(datos) {
 //Se inicializa la tabla de productos
 function obtenerProductos() {
   let datos = leer(CLAVES.productos, null);
-  if (!datos || !datos.length) {
-    datos = productosIniciales;
-    guardar(CLAVES.productos, datos);
-  }
-  return datos.map(crearProductos);
+  if (!Array.isArray(datos)) datos = [];
+  return datos.map(crearProductos).filter(Boolean);
 }
 
 //Dado que existen varios usuarios, es necesario obtener el carrito especifico ligado al usuario que esta logueado
@@ -169,13 +131,14 @@ function obtenerCarrito() {
 }
 
 
-function guardarCarrito(carrito) {
+async function guardarCarrito(carrito) {
   const usuario = usuarioActivo();
 
   if (!usuario) return;
 
   const clave = `carrito_${usuario.id}`;
   guardar(clave, carrito.listaDeProductos);
+  await cloud.saveCart(carrito);
 }
 
 //funcion para mostrar mensajes de advertencia al usuario en caso de que no cumpla con algun requesito para
@@ -188,119 +151,63 @@ function mostrarAdvertencia(texto, id) {
 // pintar usuario en la cabecera
 
 function configurarRegistro() {
-  const formulario = document.querySelector("#registerForm");
+  const formulario = document.querySelector('#registerForm');
   if (!formulario) return;
-
-  formulario.addEventListener("submit", (evento) => {
+  formulario.querySelector('button[type="submit"]').disabled = false;
+  formulario.addEventListener('submit', async evento => {
     evento.preventDefault();
     if (!formulario.reportValidity()) return;
-    sessionStorage.removeItem('registroParaLogin');
+    const boton = formulario.querySelector('button[type="submit"]');
+    if (boton.disabled) return;
+    boton.disabled = true;
+    mostrarAdvertencia('', 'registerMessage');
     const datos = new FormData(formulario);
-    const cliente = new Cliente({
-      nombre: datos.get("name").trim(),
-      correo: datos.get("email").trim().toLowerCase(),
-      direccion: datos.get("address"),
-      contrasena: datos.get("password"),
-      nombreDeUsuario: datos.get("userName").trim(),
-    });
-    const mensaje = document.querySelector("#registerMessage");
-    if (cliente.registrarse()) {
-      // Transferencia temporal de una sola lectura, sin credenciales en la URL.
-      sessionStorage.setItem('registroParaLogin', JSON.stringify({
-        usuario: cliente.correo,
-        contrasena: datos.get('password'),
-        creadoEn: Date.now(),
-      }));
-      window.location.assign('index.html');
-    } else {
-      mensaje.textContent =
-        "El correo o nombre de usuario ya estan registrados";
-      //Se usa classList para que modifique el CSS de forma rapida y temporal al mostrar un mensaje transitorio
-      mensaje.classList.add("form-message--error");
-    }
+    try {
+      await cloud.register({ nombre: datos.get('name').trim(), correo: datos.get('email').trim().toLowerCase(),
+        nombreDeUsuario: datos.get('userName').trim(), direccion: datos.get('address') }, datos.get('password'));
+      sessionStorage.setItem('registroParaLogin', JSON.stringify({ usuario: datos.get('email').trim().toLowerCase(), contrasena: datos.get('password'), creadoEn: Date.now() }));
+      location.assign('index.html');
+    } catch (error) { mostrarAdvertencia(cloud.cloudError(error), 'registerMessage'); }
+    finally { boton.disabled = false; }
   });
 }
 
 function configurarLogin() {
-  const formulario = document.querySelector("#loginForm");
+  const formulario = document.querySelector('#loginForm');
   if (!formulario) return;
-  const mensaje = document.querySelector("#loginError");
-  const aviso = new URLSearchParams(window.location.search).get("mensaje");
+  formulario.querySelector('button[type="submit"]').disabled = false;
+  const mensaje = document.querySelector('#loginError');
+  const aviso = new URLSearchParams(location.search).get('mensaje');
   if (aviso) mensaje.textContent = aviso;
-  const registroGuardado = sessionStorage.getItem('registroParaLogin');
+  const guardado = sessionStorage.getItem('registroParaLogin');
   sessionStorage.removeItem('registroParaLogin');
-  if (registroGuardado) {
+  if (guardado) {
     try {
-      const registro = JSON.parse(registroGuardado);
-      const antiguedad = Date.now() - registro.creadoEn;
-      if (typeof registro.usuario === 'string' && typeof registro.contrasena === 'string'
-          && antiguedad >= 0 && antiguedad < 5 * 60 * 1000) {
+      const registro = JSON.parse(guardado);
+      const edad = Date.now() - registro.creadoEn;
+      if (typeof registro.usuario === 'string' && typeof registro.contrasena === 'string' && edad >= 0 && edad < 300000) {
         formulario.elements.userName.value = registro.usuario;
         formulario.elements.password.value = registro.contrasena;
         const confirmacion = document.querySelector('#registrationSuccess');
-        confirmacion.textContent = 'Registro exitoso. Tus datos están listos; pulsa Iniciar sesión para continuar.';
         confirmacion.hidden = false;
+        confirmacion.textContent = 'Registro exitoso. Tus datos están listos; pulsa Iniciar sesión para continuar.';
         formulario.querySelector('button[type="submit"]').focus();
       }
-    } catch { /* Descarta datos temporales inválidos y conserva el login normal. */ }
+    } catch { /* Descarta datos temporales inválidos. */ }
   }
-  formulario.addEventListener("submit", (evento) => {
+  formulario.addEventListener('submit', async evento => {
     evento.preventDefault();
-    //Guardamos todos los datos del formulario en una variable
-    const datos = new FormData(formulario);
-    //Convertimos todo el nombre de usuario a minusculas
-    const nombreDeUsuario = datos.get("userName").trim().toLowerCase();
-    const usuarios = leer(CLAVES.usuarios, []);
-    //Validamos que lo que el usuario ingresa en el campo de texto del login coincida con el correo registrado o el nombre de usuario registrado
-    const indice = usuarios.findIndex(
-      (usuario) =>
-        usuario.correo.toLowerCase() === nombreDeUsuario ||
-        usuario.nombreDeUsuario.toLowerCase() === nombreDeUsuario,
-    );
-    const usuario = usuarios[indice];
-    const ahora = Date.now();
-    if (!usuario) {
-      mensaje.textContent = "No existe un usuario con estos datos.";
-      return;
-    }
-    if (usuario.bloqueadoHasta && ahora < usuario.bloqueadoHasta) {
-      mensaje.textContent =
-        "Usuario bloqueado por 24 horas, contacte a su administrador";
-      return;
-    }
-    if (usuario.bloqueadoHasta && ahora >= usuario.bloqueadoHasta) {
-      usuario.bloqueadoHasta = null;
-      usuario.intentosFallidos = 0;
-    }
-    if (usuario.contrasena != datos.get("password")) {
-      usuario.intentosFallidos++;
-      if (usuario.intentosFallidos >= 3) {
-        usuario.bloqueadoHasta = ahora + 24 * 60 * 60 * 1000;
-        mensaje.textContent =
-          "Ha superado el numero de intentos permitidos. Usuario bloqueado por 24 horas o comuniquese con el administrador del sistema.";
-      } else {
-        mensaje.textContent = `Credenciales incorrectas. intento ${usuario.intentosFallidos} de 3`;
-      }
-      //Actualizamos los parametros para bloquear el usuario
-      guardar(CLAVES.usuarios, usuarios);
-      return;
-    }
-    usuario.intentosFallidos = 0;
-    usuario.bloqueadoHasta = null;
-    //Guardamos en la base de datos los parametros actualizados
-    guardar(CLAVES.usuarios, usuarios);
-    //Si el proceso de validación es exitoso, guardamos una sesion activa para el usuario
-    sessionStorage.setItem(
-      CLAVES.usuarioActivo,
-      JSON.stringify({
-        id: usuario.id,
-        nombre: usuario.nombre,
-        nombreDeUsuario: usuario.nombreDeUsuario,
-        correo: usuario.correo,
-        direccion: usuario.direccion,
-      }),
-    );
-    window.location.href = "catalogo.html";
+    if (!formulario.reportValidity()) return;
+    const boton = formulario.querySelector('button[type="submit"]');
+    if (boton.disabled) return;
+    boton.disabled = true;
+    mensaje.textContent = 'Ingresando…';
+    try {
+      await cloud.login(formulario.elements.userName.value, formulario.elements.password.value);
+      formulario.elements.password.value = '';
+      location.assign('catalogo.html');
+    } catch (error) { mensaje.textContent = cloud.cloudError(error); }
+    finally { boton.disabled = false; }
   });
 }
 
@@ -318,7 +225,7 @@ function cargarTarjetas() {
     .map((producto) => {
       const info = producto.mostrarDatos();
       return `<article class="product-card" data-category="${info.identificacion}">
-			<button class="product-image-button" type="button" data-action="increase-quantity" data-product-id="${info.identificacion}" aria-label="Sumar una unidad de ${info.nombre}" title="Pulsa para sumar una unidad"><img class="product-image product-image--${info.identificacion.toLowerCase()}" src="${imagenesProductos[info.identificacion.toLowerCase()]}" alt="${info.nombre}" loading="lazy"></button>
+			<button class="product-image-button" type="button" data-action="increase-quantity" data-product-id="${info.identificacion}" aria-label="Sumar una unidad de ${info.nombre}" title="Pulsa para sumar una unidad"><img class="product-image product-image--${info.identificacion.toLowerCase()}" src="${imagenesProductos[info.identificacion.toLowerCase()] || imagenesProductos[{ Desayuno: "breakfast", Almuerzo: "lunch", Cena: "dinner" }[info.categoria]]}" alt="${info.nombre}" loading="lazy"></button>
 			<div class="product-card__body"><div class="product-card__topline"><span class="tag">${info.categoria}</span><span class="stock-label">${info.stock} disponibles</span></div>
 			<h3>${info.nombre}</h3><p>${info.descripcion}</p><div class="product-card__footer"><strong class="price">${formatoMoneda.format(info.precio)}</strong>
 			<div class="quantity-control"><label for="quantity-${info.identificacion}">Cantidad</label><input id="quantity-${info.identificacion}" type="number" min="0" max="${info.stock}" value="0" data-product-id="${info.identificacion}"></div>
@@ -350,7 +257,7 @@ function cargarTarjetas() {
   lista.addEventListener('input', actualizarSeleccion);
   lista.addEventListener('change', actualizarSeleccion);
   actualizarSeleccion();
-  lista.addEventListener("click", (evento) => {
+  lista.addEventListener("click", async (evento) => {
     const imagen = evento.target.closest('[data-action="increase-quantity"]');
     if (imagen) {
       const entrada = lista.querySelector(`input[data-product-id="${imagen.dataset.productId}"]`);
@@ -409,8 +316,11 @@ function cargarTarjetas() {
         "catalogMessage",
       );
     carrito.agregarProducto(producto, cantidadSeleccionada);
-    guardarCarrito(carrito);
     entrada.value = "0";
+    boton.disabled = true;
+    try { await guardarCarrito(carrito); }
+    catch (error) { mostrarAdvertencia(cloud.cloudError(error), "catalogMessage"); return; }
+    finally { boton.disabled = false; }
     actualizarSeleccion();
     mostrarAdvertencia(
       "Producto agregado exitosamente al carrito",
@@ -418,7 +328,8 @@ function cargarTarjetas() {
     );
   });
   // Lleva al carrito también las cantidades marcadas sin pulsar el botón +.
-  document.querySelector('#reviewCartButton')?.addEventListener('click', evento => {
+  document.querySelector('#reviewCartButton')?.addEventListener('click', async evento => {
+    evento.preventDefault();
     const carrito = obtenerCarrito();
     const productosActuales = obtenerProductos();
     const seleccion = [];
@@ -442,13 +353,16 @@ function cargarTarjetas() {
       seleccion.push({ producto, cantidad, existente, entrada });
     }
     // Primero valida toda la selección; después realiza un solo guardado.
-    if (!seleccion.length) return;
+    // También espera a guardar el carrito si ya se usó Agregar al carrito.
     for (const item of seleccion) {
       if (item.existente) item.existente.cantidad += item.cantidad;
       else carrito.listaDeProductos.push({ producto: item.producto, cantidad: item.cantidad });
     }
-    guardarCarrito(carrito);
     seleccion.forEach(item => { item.entrada.value = '0'; });
+    try {
+      await guardarCarrito(carrito);
+      window.location.assign('carrito.html');
+    } catch (error) { mostrarAdvertencia(cloud.cloudError(error), 'catalogMessage'); }
   });
 }
 
@@ -474,9 +388,9 @@ function configurarCabecera() {
 
   const botonSalir = document.querySelector("#logoutButton");
   if (botonSalir) {
-    botonSalir.addEventListener("click", () => {
+    botonSalir.addEventListener("click", async () => {
       // Elimina solo la sesión activa; conserva los usuarios y los carritos guardados.
-      sessionStorage.removeItem(CLAVES.usuarioActivo);
+      await cloud.logout();
       window.location.href = "index.html";
     });
   }
@@ -701,7 +615,7 @@ function configurarCarrito() {
     // Conecta la acción que se ejecutará cuando el usuario cambie una cantidad y confirme el cambio, por ejemplo al salir del campo.
     // Escuchamos desde la tabla porque los eventos de sus campos llegan a ella.
     // Así no hay que volver a conectar cada campo cuando mostrarCarrito reconstruye las filas.
-    tabla.addEventListener('change', evento => {
+    tabla.addEventListener('change', async evento => {
         // evento.target indica en qué elemento ocurrió el cambio.
         // closest busca el propio elemento o uno de sus contenedores con data-action="change-quantity".
         const entrada = evento.target.closest(
@@ -759,6 +673,8 @@ function configurarCarrito() {
         const carrito = obtenerCarrito();
         // El método de modelos.js cambia la cantidad del producto, recalcula el total y guarda el carrito en localStorage.
         carrito.actualizarCantidadProducto(productoId, cantidad);
+        try { await guardarCarrito(carrito); }
+        catch (error) { mostrarMensaje(cloud.cloudError(error)); return; }
 
         // Lee el carrito guardado y vuelve a dibujar las filas, cantidades y totales en pantalla.
         mostrarCarrito();
@@ -768,7 +684,7 @@ function configurarCarrito() {
 
     // Aquí se conecta la acción de eliminar, que solo se ejecuta cuando llega un clic.
     // Una sola función en la tabla atiende todos los botones Eliminar, incluso después de reconstruir las filas.
-    tabla.addEventListener('click', evento => {
+    tabla.addEventListener('click', async evento => {
         // Busca el botón de eliminar aunque el clic ocurra sobre un elemento dentro del botón.
         const boton = evento.target.closest(
             '[data-action="remove-product"]'
@@ -784,6 +700,9 @@ function configurarCarrito() {
         // Por ejemplo, si había 3 combos, se quita la entrada completa; no se resta solo uno.
         // El método de modelos.js también recalcula el total y guarda el carrito en localStorage.
         carrito.eliminarProducto(boton.dataset.productId);
+        boton.disabled = true;
+        try { await guardarCarrito(carrito); }
+        catch (error) { boton.disabled = false; mostrarMensaje(cloud.cloudError(error)); return; }
 
         // Lee el carrito guardado y vuelve a dibujar las filas, cantidades y totales en pantalla.
         mostrarCarrito();
@@ -891,8 +810,11 @@ function realizarPago() {
     opciones.forEach((opcion) => opcion.addEventListener('change', cambiarMetodo));
     cambiarMetodo();
     //Añadimos in listener para cuando se haga click en el boton que procesa la compra
-    formulario.addEventListener('submit', (evento) => {
+    document.querySelector('#confirmPayment').disabled = false;
+    let pagoEnCurso = false;
+    formulario.addEventListener('submit', async (evento) => {
         evento.preventDefault();
+        if (pagoEnCurso) return;
         //Si el formulario no es valido, repota los errores que encuentra
         if(!formulario.checkValidity()) return formulario.reportValidity();
         const metodo = document.querySelector('input[name="method"]:checked').value;
@@ -916,11 +838,6 @@ function realizarPago() {
             mostrarAdvertencia('Uno de los productos ya no tiene stock suficiente.', 'paymentMessage');
             return;
         }
-        //Toma los productos seleccinados por el usuario y busca el mismo ID en la BD para controlar el inventario
-        carritoPago.listaDeProductos.forEach((item) => {
-            const producto = productos.find((actual) => actual.identificacion === item.producto.identificacion);
-            producto.actualizarStock(item.cantidad)
-        });
         //Guarda el metodo seleccionado buscando en HTML un input con atributo method y que este seleccionado
         //Creamos un nuebo objeto de la clase orden, de modo que podamos guardar la información que sera mostrada
         //una vez el pago sea procesado
@@ -930,22 +847,25 @@ function realizarPago() {
         );
         // Guarda el método elegido para mostrarlo en el historial.
         // Esto no procesa ni confirma un pago.
+        orden.ordenId = `ORD-${crypto.randomUUID()}`;
         orden.metodoDePago = metodo === 'nequi' ? 'Nequi (simulación, sin cobro)' : metodo;
         if (metodo === 'nequi') orden.simulacionPago = simulacionNequi.comprobante();
         // Guarda la tienda donde se recogerá esta compra.
         orden.sedeRecogida = usuario.direccion;
-        const ordenes = leer(CLAVES.ordenes, []);
-        //"empujamos" la nueva orden dentro de la lista de ordenes
-        ordenes.push(orden);
-        //con map, recorremos el arreglo de productos para guardar y actualizar el stock de los productos comprados
-        guardar(CLAVES.productos, productos.map((producto) => producto.mostrarDatos()));
-        //Guardamos esta orden procesada con las demas ordenes ya existentes
-        guardar(CLAVES.ordenes, ordenes);
-        //Guardamos la ultima orden procesada para ser mostrada en la orden
-        guardar(CLAVES.ultimaOrden, orden);
-        //Limpiamos el carrito de compras
-        guardar(`carrito_${usuario.id}`, []);
-        window.location.href = 'orden.html?compra=1';
+        pagoEnCurso = true;
+        document.querySelector('#confirmPayment').disabled = true;
+        mostrarAdvertencia('Guardando tu compra…', 'paymentMessage');
+        try {
+          const registrada = await cloud.createOrder(orden);
+          guardar(CLAVES.ultimaOrden, registrada);
+          guardar(`carrito_${usuario.id}`, []);
+          window.location.href = 'orden.html?compra=1';
+        } catch (error) {
+          mostrarAdvertencia(cloud.cloudError(error), 'paymentMessage');
+        } finally {
+          pagoEnCurso = false;
+          document.querySelector('#confirmPayment').disabled = false;
+        }
     })
 }
 // Conecta el botón Ver mis órdenes que ya existe en el catálogo.
@@ -1125,91 +1045,43 @@ function mostrarHistorial(ordenes) {
 }
 // Carga los datos del usuario y conecta el formulario para guardar sus cambios.
 function actualizarPerfil() {
-    const formulario = document.querySelector('#profileForm');
-    const usuario = usuarioActivo();
-    // Solo trabaja en el perfil y cuando hay una sesión iniciada.
-    if (!formulario || !usuario) return;
-
-    const datos = leer(CLAVES.usuarios, []).find(item => item.id === usuario.id);
-    if (!datos) return;
-
-    // A la izquierda está el nombre del campo; a la derecha, la propiedad guardada.
-    const campos = {
-        name: 'nombre',
-        userName: 'nombreDeUsuario',
-        email: 'correo',
-        address: 'direccion'
-    };
-    // Llena cada campo con los datos actuales del usuario.
-    Object.entries(campos).forEach(([campo, propiedad]) => {
-        formulario.elements[campo].value = datos[propiedad] || '';
-    });
-
-    // Una contraseña vacía significa que desea conservar la anterior.
-    const campoContrasena = formulario.elements.password;
-    campoContrasena.required = false;
-    campoContrasena.placeholder = 'Déjala vacía para conservar la actual';
-
-    formulario.addEventListener('submit', evento => {
-        evento.preventDefault();
-        if (!formulario.checkValidity()) return formulario.reportValidity();
-
-        const formularioDatos = new FormData(formulario);
-        // No usamos trim: los espacios pueden formar parte de una contraseña.
-        const nuevaContrasena = formularioDatos.get('password') || '';
-        const usuarios = leer(CLAVES.usuarios, []);
-        const usuarioGuardado = usuarios.find(item => item.id === usuario.id);
-        if (!usuarioGuardado) {
-            mostrarAdvertencia('No se encontró el usuario.', 'profileMessage');
-            return;
-        }
-
-        const cliente = new Cliente({
-            ...usuarioGuardado,
-            nombre: formularioDatos.get('name').trim(),
-            nombreDeUsuario: formularioDatos.get('userName').trim(),
-            correo: formularioDatos.get('email').trim().toLowerCase(),
-            direccion: formularioDatos.get('address').trim(),
-            contrasena: nuevaContrasena || usuarioGuardado.contrasena
-        });
-        // Los espacios por sí solos no cuentan como un nombre válido.
-        if (!cliente.nombre || !cliente.nombreDeUsuario || !cliente.correo || !cliente.direccion) {
-            mostrarAdvertencia('Por favor completa todos los campos.', 'profileMessage');
-            return;
-        }
-
-        // Excluye al propio usuario al buscar datos repetidos.
-        const repetidos = usuarios.some(item => item.id !== usuario.id && (
-            item.correo.toLowerCase() === cliente.correo ||
-            item.nombreDeUsuario.toLowerCase() === cliente.nombreDeUsuario.toLowerCase()
-        ));
-        if (repetidos) {
-            mostrarAdvertencia('El correo o nombre de usuario ya están registrados.', 'profileMessage');
-            return;
-        }
-        // Este método guarda los cambios en la lista usuarios de localStorage.
-        if (!cliente.modificar()) {
-            mostrarAdvertencia('No se pudieron guardar los cambios.', 'profileMessage');
-            return;
-        }
-
-        // La sesión está en sessionStorage, igual que en el inicio de sesión.
-        // Guarda los datos personales sin copiar la contraseña a la sesión.
-        sessionStorage.setItem(CLAVES.usuarioActivo, JSON.stringify({
-            id: cliente.id,
-            nombre: cliente.nombre,
-            nombreDeUsuario: cliente.nombreDeUsuario,
-            correo: cliente.correo,
-            direccion: cliente.direccion
-        }));
-        const saludo = document.querySelector('#loggedUserName');
-        if (saludo) saludo.textContent = cliente.nombre;
-        campoContrasena.value = '';
-        mostrarAdvertencia('Datos actualizados correctamente.', 'profileMessage');
-    });
+  const formulario = document.querySelector('#profileForm');
+  const usuario = usuarioActivo();
+  if (!formulario || !usuario) return;
+  formulario.querySelector('button[type="submit"]').disabled = false;
+  const campos = { name: 'nombre', userName: 'nombreDeUsuario', email: 'correo', address: 'direccion' };
+  Object.entries(campos).forEach(([campo, propiedad]) => { formulario.elements[campo].value = usuario[propiedad] || ''; });
+  formulario.elements.email.readOnly = true;
+  formulario.elements.email.title = 'Correo de acceso de la cuenta';
+  formulario.elements.password.required = false;
+  formulario.addEventListener('submit', async evento => {
+    evento.preventDefault();
+    if (!formulario.reportValidity()) return;
+    const boton = formulario.querySelector('button[type="submit"]');
+    if (boton.disabled) return;
+    const datos = new FormData(formulario);
+    boton.disabled = true;
+    try {
+      const perfil = await cloud.saveProfile({ nombre: datos.get('name').trim(), nombreDeUsuario: datos.get('userName').trim(),
+        correo: datos.get('email').trim().toLowerCase(), direccion: datos.get('address') }, datos.get('password'));
+      document.querySelector('#loggedUserName').textContent = perfil.nombre;
+      formulario.elements.password.value = '';
+      mostrarAdvertencia('Datos actualizados correctamente.', 'profileMessage');
+    } catch (error) { mostrarAdvertencia(cloud.cloudError(error), 'profileMessage'); }
+    finally { boton.disabled = false; }
+  });
 }
 
 // Ejecuta las funciones correspondientes a cada página.
+try {
+  await cloud.initializeCloud();
+} catch (error) {
+  const mensaje = document.createElement('p');
+  mensaje.className = 'form-message form-message--error container';
+  mensaje.setAttribute('role', 'alert');
+  mensaje.textContent = cloud.cloudError(error);
+  document.querySelector('main')?.prepend(mensaje);
+}
 if (protegerPaginas()) {
   configurarCabecera();
   configurarLogin();
@@ -1222,3 +1094,5 @@ if (protegerPaginas()) {
   configurarHistorial();
   actualizarPerfil();
 }
+
+document.body.dataset.cloudReady = 'true';
