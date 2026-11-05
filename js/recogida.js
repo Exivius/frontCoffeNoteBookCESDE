@@ -10,7 +10,7 @@ function mensajePago(pedido) {
   return `Método de pago: ${pedido.metodo || 'No disponible'}.`;
 }
 
-// El QR lleva el detalle visual de la compra, sin datos personales ni sesión.
+// El QR comparte el nombre y la sede solicitados, sin correo, credenciales ni sesión.
 export function mostrarQrRecogida(orden) {
   let nombreDueno = '';
   try {
