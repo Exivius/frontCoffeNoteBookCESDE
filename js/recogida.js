@@ -12,8 +12,20 @@ function mensajePago(pedido) {
 
 // El QR lleva el detalle visual de la compra, sin datos personales ni sesión.
 export function mostrarQrRecogida(orden) {
+  let nombreDueno = '';
+  try {
+    const usuario = JSON.parse(sessionStorage.getItem('usuarioActual') || 'null');
+    if (usuario?.id === orden.clienteId && typeof usuario.nombre === 'string') {
+      nombreDueno = usuario.nombre;
+    }
+  } catch {
+    // Si no hay sesión legible, se prueba el nombre guardado en la orden.
+  }
+  if (!nombreDueno && typeof orden.nombreCliente === 'string') nombreDueno = orden.nombreCliente;
   const pedido = {
     metodo: orden.metodoDePago || '',
+    nombreDueno,
+    sedeRecogida: orden.sedeRecogida || '',
     productos: (orden.listaDeProductos || []).map(item => ({
       id: String(item.producto.identificacion).toLowerCase(),
       nombre: item.producto.nombre,
@@ -37,7 +49,7 @@ export function mostrarQrRecogida(orden) {
     acceso.href = destino.href;
     acceso.target = '_blank';
     acceso.rel = 'noopener noreferrer';
-    acceso.setAttribute('aria-label', 'Abrir imágenes, cantidades y método de pago del pedido');
+    acceso.setAttribute('aria-label', 'Abrir dueño, sede, imágenes, cantidades y método de pago del pedido');
     // SVG producido únicamente por la librería QR; no contiene HTML del pedido.
     acceso.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 20, scalable: true });
     contenedor.append(acceso);
@@ -53,8 +65,13 @@ if (galeria) {
     if (!datos || datos.length > 20000) throw new Error('El enlace del pedido no es válido.');
     const bytes = Uint8Array.from(atob(datos), character => character.charCodeAt(0));
     const pedido = JSON.parse(new TextDecoder().decode(bytes));
-    if (typeof pedido.metodo !== 'string' || !Array.isArray(pedido.productos)
+    if (typeof pedido.metodo !== 'string' || pedido.metodo.length > 100
+        || (pedido.nombreDueno !== undefined && (typeof pedido.nombreDueno !== 'string' || pedido.nombreDueno.length > 150))
+        || (pedido.sedeRecogida !== undefined && (typeof pedido.sedeRecogida !== 'string' || pedido.sedeRecogida.length > 150))
+        || !Array.isArray(pedido.productos)
         || !pedido.productos.length || pedido.productos.length > 50) throw new Error('El pedido no contiene productos válidos.');
+    const resumen = document.querySelector('#pickupOwnerStore');
+    resumen.textContent = `Dueño: ${pedido.nombreDueno || 'No disponible'} · Sede de recogida: ${pedido.sedeRecogida || 'No disponible'}`;
     const tarjetas = [];
     let unidades = 0;
     for (const producto of pedido.productos) {
