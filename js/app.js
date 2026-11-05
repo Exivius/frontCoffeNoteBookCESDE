@@ -192,6 +192,8 @@ function configurarRegistro() {
 
   formulario.addEventListener("submit", (evento) => {
     evento.preventDefault();
+    if (!formulario.reportValidity()) return;
+    sessionStorage.removeItem('registroParaLogin');
     const datos = new FormData(formulario);
     const cliente = new Cliente({
       nombre: datos.get("name").trim(),
@@ -202,8 +204,13 @@ function configurarRegistro() {
     });
     const mensaje = document.querySelector("#registerMessage");
     if (cliente.registrarse()) {
-      mensaje.textContent = "Registro éxitoso. Ahora puedes iniciar sesión";
-      formulario.reset();
+      // Transferencia temporal de una sola lectura, sin credenciales en la URL.
+      sessionStorage.setItem('registroParaLogin', JSON.stringify({
+        usuario: cliente.correo,
+        contrasena: datos.get('password'),
+        creadoEn: Date.now(),
+      }));
+      window.location.assign('index.html');
     } else {
       mensaje.textContent =
         "El correo o nombre de usuario ya estan registrados";
@@ -219,6 +226,23 @@ function configurarLogin() {
   const mensaje = document.querySelector("#loginError");
   const aviso = new URLSearchParams(window.location.search).get("mensaje");
   if (aviso) mensaje.textContent = aviso;
+  const registroGuardado = sessionStorage.getItem('registroParaLogin');
+  sessionStorage.removeItem('registroParaLogin');
+  if (registroGuardado) {
+    try {
+      const registro = JSON.parse(registroGuardado);
+      const antiguedad = Date.now() - registro.creadoEn;
+      if (typeof registro.usuario === 'string' && typeof registro.contrasena === 'string'
+          && antiguedad >= 0 && antiguedad < 5 * 60 * 1000) {
+        formulario.elements.userName.value = registro.usuario;
+        formulario.elements.password.value = registro.contrasena;
+        const confirmacion = document.querySelector('#registrationSuccess');
+        confirmacion.textContent = 'Registro exitoso. Tus datos están listos; pulsa Iniciar sesión para continuar.';
+        confirmacion.hidden = false;
+        formulario.querySelector('button[type="submit"]').focus();
+      }
+    } catch { /* Descarta datos temporales inválidos y conserva el login normal. */ }
+  }
   formulario.addEventListener("submit", (evento) => {
     evento.preventDefault();
     //Guardamos todos los datos del formulario en una variable
