@@ -31,7 +31,7 @@ export function configurarSimulacionNequi(obtenerCarrito, formatoMoneda) {
     acciones.hidden = estado !== 'pendiente';
     solicitar.hidden = estado === 'pendiente' || estado === 'aprobada';
     solicitar.textContent = estado === 'inicial'
-      ? 'Simular solicitud Nequi' : 'Reintentar simulación';
+      ? 'Solicitar pago' : 'Reintentar pago';
   }
 
   solicitar.addEventListener('click', () => {
@@ -42,22 +42,22 @@ export function configurarSimulacionNequi(obtenerCarrito, formatoMoneda) {
       !Number.isInteger(item.cantidad) || item.cantidad < 1 ||
       !Number.isFinite(Number(item.producto.precio)) || Number(item.producto.precio) <= 0);
     if (!carrito.listaDeProductos.length || itemsInvalidos || !Number.isFinite(total) || total <= 0) {
-      mostrarEstado('rechazada', 'Agrega productos con un total válido antes de simular.');
+      mostrarEstado('rechazada', 'Agrega productos con un total válido antes de pagar.');
       return;
     }
     totalVisible.textContent = formatoMoneda.format(total);
     resumenAprobado = resumenActual();
-    mostrarEstado('pendiente', 'Solicitud de prueba creada. Elige un resultado para continuar; no se ha enviado ningún cobro.');
+    mostrarEstado('pendiente', 'Solicitud lista. Revisa el total y confirma para continuar.');
   });
 
   document.querySelector('#nequiApprove').addEventListener('click', () => {
     if (estado !== 'pendiente') return;
     if (resumenAprobado !== resumenActual()) {
-      mostrarEstado('cancelada', 'El carrito cambió. Crea una nueva solicitud de prueba.');
+      mostrarEstado('cancelada', 'El carrito cambió. Solicita el pago de nuevo.');
       return;
     }
     referencia = `SIM-NEQUI-${Date.now()}`;
-    mostrarEstado('aprobada', 'Simulación aprobada. Regresando a tu compra…');
+    mostrarEstado('aprobada', 'Pago aprobado. Regresando a tu compra…');
     ventana.close();
     document.querySelector('#paymentForm').requestSubmit();
   });
@@ -65,13 +65,13 @@ export function configurarSimulacionNequi(obtenerCarrito, formatoMoneda) {
   document.querySelector('#nequiReject').addEventListener('click', () => {
     if (estado !== 'pendiente') return;
     resumenAprobado = '';
-    mostrarEstado('rechazada', 'Simulación rechazada. Tu carrito se conserva; puedes reintentar o elegir otro método.');
+    mostrarEstado('rechazada', 'Pago rechazado. Tu carrito se conserva; puedes reintentar o elegir otro método.');
   });
 
   document.querySelector('#nequiCancel').addEventListener('click', () => {
     if (estado !== 'pendiente') return;
     resumenAprobado = '';
-    mostrarEstado('cancelada', 'Simulación cancelada. No se creó un pedido ni se modificó tu carrito.');
+    mostrarEstado('cancelada', 'Pago cancelado. No se creó un pedido ni se modificó tu carrito.');
     ventana.close();
   });
 
@@ -82,15 +82,15 @@ export function configurarSimulacionNequi(obtenerCarrito, formatoMoneda) {
       resumenAprobado = '';
       referencia = '';
       totalVisible.textContent = formatoMoneda.format(obtenerCarrito().calcularTotal());
-      mostrarEstado('inicial', 'Listo para crear una solicitud de prueba.');
+      mostrarEstado('inicial', 'Listo para solicitar el pago.');
     },
     validar() {
       if (estado !== 'aprobada') {
-        return 'Completa la simulación Nequi y elige «Simular aprobación» antes de confirmar el pedido.';
+        return 'Abre Nequi y elige «Aprobar pago» antes de confirmar el pedido.';
       }
       if (resumenAprobado !== resumenActual()) {
-        mostrarEstado('cancelada', 'El carrito cambió. Crea una nueva solicitud de prueba.');
-        return 'El carrito cambió después de la simulación. Revisa el total y vuelve a simular.';
+        mostrarEstado('cancelada', 'El carrito cambió. Solicita el pago de nuevo.');
+        return 'El carrito cambió. Revisa el total y solicita el pago de nuevo.';
       }
       return '';
     },
