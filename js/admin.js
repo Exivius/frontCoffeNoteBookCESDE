@@ -76,7 +76,7 @@ function initialize(session) {
       if (!Array.isArray(result)) throw new Error("El servicio devolvió un listado inesperado. Intenta actualizar la sección.");
       records = result.filter((record) => record && typeof record === "object");
       loaded = true;
-      $("#connectionStatus").textContent = "Datos de Firebase actualizados";
+      $("#connectionStatus").textContent = "Backend Java actualizado";
       render();
     } catch (error) {
       if (sequence !== loadSequence || signingOut) return;
