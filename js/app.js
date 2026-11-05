@@ -395,6 +395,39 @@ function cargarTarjetas() {
       "catalogMessage",
     );
   });
+  // Lleva al carrito también las cantidades marcadas sin pulsar el botón +.
+  document.querySelector('#reviewCartButton')?.addEventListener('click', evento => {
+    const carrito = obtenerCarrito();
+    const productosActuales = obtenerProductos();
+    const seleccion = [];
+    for (const entrada of lista.querySelectorAll('input[data-product-id]')) {
+      const cantidad = Number(entrada.value);
+      if (!Number.isInteger(cantidad) || cantidad < 0) {
+        evento.preventDefault();
+        mostrarAdvertencia('Selecciona cantidades enteras mayores o iguales a cero.', 'catalogMessage');
+        entrada.focus();
+        return;
+      }
+      if (cantidad === 0) continue;
+      const producto = productosActuales.find(item => item.identificacion === entrada.dataset.productId);
+      const existente = carrito.listaDeProductos.find(item => item.producto.identificacion === entrada.dataset.productId);
+      if (!producto || cantidad + (existente?.cantidad || 0) > producto.stock) {
+        evento.preventDefault();
+        mostrarAdvertencia('La selección supera el stock disponible. Revisa las cantidades.', 'catalogMessage');
+        entrada.focus();
+        return;
+      }
+      seleccion.push({ producto, cantidad, existente, entrada });
+    }
+    // Primero valida toda la selección; después realiza un solo guardado.
+    if (!seleccion.length) return;
+    for (const item of seleccion) {
+      if (item.existente) item.existente.cantidad += item.cantidad;
+      else carrito.listaDeProductos.push({ producto: item.producto, cantidad: item.cantidad });
+    }
+    guardarCarrito(carrito);
+    seleccion.forEach(item => { item.entrada.value = '0'; });
+  });
 }
 
 // Formateador reutilizable: es-CO usa las convenciones de Colombia (punto para miles).
