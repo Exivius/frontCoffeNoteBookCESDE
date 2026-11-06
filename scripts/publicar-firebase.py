@@ -17,6 +17,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--deploy', action='store_true')
     args = parser.parse_args()
+    # El SITE_ID de firebase.json decide a cuál de los sitios del mismo proyecto
+    # se publica; .firebaserc conserva el ID de proyecto y sus recursos Firebase.
     config = json.loads((ROOT / 'firebase.json').read_text())['hosting']
     project = json.loads((ROOT / '.firebaserc').read_text())['projects']['default']
     site = config['site']
