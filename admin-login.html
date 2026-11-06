@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Acceso de administradores de Coffee-NoteBook CESDE.">
+  <title>Acceso administrador | Coffee-NoteBook CESDE</title>
+  <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="./css/admin.css">
+  <link rel="stylesheet" href="./css/interacciones.css">
+</head>
+<body class="auth-page">
+  <main class="auth-shell admin-auth">
+    <section class="auth-panel" aria-labelledby="adminLoginTitle">
+      <a class="brand brand--auth" href="index.html"><span class="brand-mark" aria-hidden="true">CN</span><span>Coffee-NoteBook <strong>CESDE</strong></span></a>
+      <div class="auth-copy"><p class="eyebrow">Administración</p><h1 id="adminLoginTitle">Todo en su lugar.</h1><p>Ingresa con tu cuenta de administrador para gestionar la cafetería.</p></div>
+      <form id="adminLoginForm" class="form-stack" method="post">
+        <div class="field-group"><label for="adminEmail">Correo electrónico</label><input id="adminEmail" name="email" type="email" autocomplete="username" maxlength="150" required></div>
+        <div class="field-group"><label for="adminPassword">Contraseña</label><input id="adminPassword" name="password" type="password" autocomplete="current-password" required></div>
+        <p id="loginNotice" class="admin-notice" role="status" aria-live="polite" hidden></p>
+        <button class="button button--primary button--full" id="loginSubmit" type="submit" disabled>Ingresar al panel <span aria-hidden="true">→</span></button>
+      </form>
+      <p class="field-hint">Conecta el backend Java y la base MySQL para iniciar sesión. Dirección del servicio: http://localhost:8080/api</p>
+      <p class="auth-switch"><a href="index.html">← Volver al acceso de clientes</a></p>
+    </section>
+    <aside class="auth-visual admin-auth-visual" aria-label="Administración de cafetería"><div class="visual-stamp">Coffee-NoteBook</div><div class="visual-content"><span class="visual-icon" aria-hidden="true">☕</span><p class="eyebrow">Un buen día empieza aquí</p><h2>Más orden.<br>Más tiempo para el café.</h2></div></aside>
+  </main>
+  <script type="module" src="./js/admin-login.js"></script>
+  <script type="module" src="./js/interacciones.js"></script>
+</body>
+</html>

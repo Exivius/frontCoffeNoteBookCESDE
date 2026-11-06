@@ -1,0 +1,129 @@
+import qrcode from './vendor/qrcode-generator.mjs';
+import { PUBLIC_SITE_URL } from './publicacion.js';
+
+const imagenes = { breakfast: './images/breakfast.png', lunch: './images/lunch.png', dinner: './images/dinner.png' };
+
+function mensajePago(pedido) {
+  if (pedido.metodo === 'contra entrega') return 'Pago contra entrega · pendiente al recoger.';
+  if (/nequi/i.test(pedido.metodo)) return 'Pago con Nequi · confirmado.';
+  if (/tarjeta/i.test(pedido.metodo)) return 'Pago con tarjeta · confirmado.';
+  return `Método de pago: ${pedido.metodo || 'No disponible'}.`;
+}
+
+function codificarPedido(pedido) {
+  const compactado = {
+    v: 2,
+    m: pedido.metodo,
+    n: pedido.nombreDueno,
+    s: pedido.sedeRecogida,
+    p: pedido.productos.map(producto => [producto.id, producto.nombre, producto.imagen, producto.cantidad]),
+  };
+  const bytes = new TextEncoder().encode(JSON.stringify(compactado));
+  return btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(''))
+    .replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
+}
+
+function decodificarPedido(datos) {
+  const base64 = datos.replaceAll('-', '+').replaceAll('_', '/');
+  const bytes = Uint8Array.from(atob(base64 + '='.repeat((4 - base64.length % 4) % 4)), character => character.charCodeAt(0));
+  const pedido = JSON.parse(new TextDecoder().decode(bytes));
+  if (pedido.v === 2) return {
+    metodo: pedido.m,
+    nombreDueno: pedido.n,
+    sedeRecogida: pedido.s,
+    productos: pedido.p?.map(([id, nombre, imagen, cantidad]) => ({ id, nombre, imagen, cantidad })),
+  };
+  return pedido;
+}
+
+// El QR comparte el nombre y la sede solicitados, sin correo, credenciales ni sesión.
+export function mostrarQrRecogida(orden) {
+  let nombreDueno = '';
+  try {
+    const usuario = JSON.parse(sessionStorage.getItem('usuarioActual') || 'null');
+    if (usuario?.id === orden.clienteId && typeof usuario.nombre === 'string') {
+      nombreDueno = usuario.nombre;
+    }
+  } catch {
+    // Si no hay sesión legible, se prueba el nombre guardado en la orden.
+  }
+  if (!nombreDueno && typeof orden.nombreCliente === 'string') nombreDueno = orden.nombreCliente;
+  const pedido = {
+    metodo: orden.metodoDePago || '',
+    nombreDueno,
+    sedeRecogida: orden.sedeRecogida || '',
+    productos: (orden.listaDeProductos || []).map(item => ({
+      id: String(item.producto.identificacion).toLowerCase(),
+      nombre: item.producto.nombre,
+      imagen: ({ Desayuno: "breakfast", Almuerzo: "lunch", Cena: "dinner" })[item.producto.categoria] || String(item.producto.identificacion).toLowerCase(),
+      cantidad: item.cantidad,
+    })),
+  };
+  const destino = new URL('./recogida.html', PUBLIC_SITE_URL);
+  destino.searchParams.set('pedido', codificarPedido(pedido));
+  const enlace = document.querySelector('#pickupGalleryLink');
+  enlace.href = destino.href;
+  const contenedor = document.querySelector('#orderQr');
+  contenedor.replaceChildren();
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(destino.href);
+    qr.make();
+    const acceso = document.createElement('a');
+    acceso.className = 'pickup-qr-link';
+    acceso.href = destino.href;
+    acceso.target = '_blank';
+    acceso.rel = 'noopener noreferrer';
+    acceso.setAttribute('aria-label', 'Abrir dueño, sede, imágenes, cantidades y método de pago del pedido');
+    // SVG producido únicamente por la librería QR; no contiene HTML del pedido.
+    acceso.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 20, scalable: true });
+    contenedor.append(acceso);
+  } catch {
+    contenedor.textContent = 'Este pedido es demasiado extenso para el QR. Puedes abrir sus imágenes con el enlace.';
+  }
+}
+
+const galeria = document.querySelector('#pickupProducts');
+if (galeria) {
+  try {
+    const datos = new URLSearchParams(location.search).get('pedido');
+    if (!datos || datos.length > 20000) throw new Error('El enlace del pedido no es válido.');
+    const pedido = decodificarPedido(datos);
+    if (typeof pedido.metodo !== 'string' || pedido.metodo.length > 100
+        || (pedido.nombreDueno !== undefined && (typeof pedido.nombreDueno !== 'string' || pedido.nombreDueno.length > 150))
+        || (pedido.sedeRecogida !== undefined && (typeof pedido.sedeRecogida !== 'string' || pedido.sedeRecogida.length > 150))
+        || !Array.isArray(pedido.productos)
+        || !pedido.productos.length || pedido.productos.length > 50) throw new Error('El pedido no contiene productos válidos.');
+    const resumen = document.querySelector('#pickupOwnerStore');
+    resumen.textContent = `Dueño: ${pedido.nombreDueno || 'No disponible'} · Sede de recogida: ${pedido.sedeRecogida || 'No disponible'}`;
+    const tarjetas = [];
+    let unidades = 0;
+    for (const producto of pedido.productos) {
+      if (typeof producto.id !== 'string' || typeof producto.nombre !== 'string'
+          || producto.nombre.length > 150 || !Number.isInteger(producto.cantidad)
+          || producto.cantidad < 1 || producto.cantidad > 10000) throw new Error('El detalle de productos no es válido.');
+      const tarjeta = document.createElement('article');
+      tarjeta.className = 'pickup-product';
+      const imagen = Object.hasOwn(imagenes, producto.imagen || producto.id) ? imagenes[producto.imagen || producto.id] : null;
+      if (imagen) {
+        const foto = document.createElement('img');
+        foto.src = imagen;
+        foto.alt = producto.nombre;
+        tarjeta.append(foto);
+      }
+      const titulo = document.createElement('h2');
+      titulo.textContent = producto.nombre;
+      const cantidad = document.createElement('p');
+      cantidad.className = 'pickup-quantity';
+      cantidad.textContent = `Cantidad para recoger: ${producto.cantidad}`;
+      tarjeta.append(titulo, cantidad);
+      tarjetas.push(tarjeta);
+      unidades += producto.cantidad;
+    }
+    galeria.replaceChildren(...tarjetas);
+    document.querySelector('#pickupPayment').textContent = mensajePago(pedido);
+    document.querySelector('#pickupUnits').textContent = `${unidades} unidades en ${tarjetas.length} productos.`;
+  } catch (error) {
+    document.querySelector('#pickupPayment').textContent = error.message || 'No se pudo abrir el pedido.';
+  }
+}
