@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Panel de administración de Coffee-NoteBook CESDE.">
+  <title>Administración | Coffee-NoteBook CESDE</title>
+  <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="./css/admin.css">
+  <link rel="stylesheet" href="./css/interacciones.css">
+</head>
+<body class="admin-page">
+  <a class="skip-link" href="#adminContent">Ir al contenido</a>
+  <div id="adminShell" class="admin-shell" hidden>
+    <aside class="admin-sidebar"><a class="brand" href="admin.html"><span class="brand-mark" aria-hidden="true">CN</span><span>Coffee-NoteBook<br><strong>CESDE</strong></span></a><p class="eyebrow sidebar-label">Tu cafetería</p><nav id="resourceNav" aria-label="Secciones de administración"></nav><div class="sidebar-bottom"><span class="sidebar-dot" aria-hidden="true"></span> Panel de administración</div></aside>
+    <div class="admin-workspace">
+      <header class="admin-topbar"><span id="connectionStatus" class="admin-topbar-label" role="status">Consultando servicio…</span><div class="admin-account"><span id="adminName"></span><button id="logoutButton" class="button button--ghost button--small" type="button">Cerrar sesión</button></div></header>
+      <main id="adminContent" class="admin-content" tabindex="-1">
+        <div class="admin-heading"><div><p class="eyebrow">Coffee-NoteBook CESDE</p><h1 id="resourceTitle">Administración</h1><p id="resourceDescription" class="intro-text"></p></div><button id="createButton" class="button button--primary" type="button">Crear registro</button></div>
+        <p id="pageNotice" class="admin-notice" role="status" aria-live="polite" hidden></p>
+        <section class="admin-card" aria-labelledby="resourceTitle"><div class="admin-toolbar"><div class="admin-search"><label class="sr-only" for="resourceSearch">Buscar en los registros</label><input id="resourceSearch" type="search" placeholder="Buscar en esta sección…" autocomplete="off"></div><div class="admin-toolbar-actions"><span id="resultCount" class="results-count"></span><button id="refreshButton" class="button button--secondary button--small" type="button">Actualizar</button></div></div>
+          <div id="recordsRegion" aria-busy="false"><div class="admin-table-wrap"><table class="admin-table"><caption id="tableCaption" class="sr-only">Registros</caption><thead id="recordsHead"></thead><tbody id="recordsBody"></tbody></table></div><div id="emptyState" class="admin-empty" hidden><span aria-hidden="true">○</span><h2 id="emptyTitle"></h2><p id="emptyDescription"></p></div></div>
+        </section>
+        <p id="readOnlyNote" class="admin-footnote" hidden>Las transacciones se consultan aquí. Su registro se realiza desde el flujo de compra.</p>
+      </main>
+      <footer class="admin-footer">© 2026 Coffee-NoteBook CESDE · Cada detalle cuenta.</footer>
+    </div>
+  </div>
+  <dialog id="editorDialog" class="admin-dialog" aria-labelledby="editorTitle"><form id="editorForm"><div class="dialog-heading"><div><p class="eyebrow">Gestión de cafetería</p><h2 id="editorTitle"></h2></div><button id="closeEditor" class="button button--ghost button--small" type="button" aria-label="Cerrar formulario">✕</button></div><div id="editorFields" class="admin-form-grid"></div><p id="editorNotice" class="admin-notice" role="status" aria-live="polite" hidden></p><div class="dialog-actions"><button id="cancelEditor" class="button button--secondary" type="button">Cancelar</button><button id="saveButton" class="button button--primary" type="submit">Guardar</button></div></form></dialog>
+  <script type="module" src="./js/admin.js"></script>
+  <script type="module" src="./js/interacciones.js"></script>
+</body>
+</html>
