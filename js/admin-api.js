@@ -13,7 +13,7 @@ export class AdminApi {
   async request(path, { method = 'GET', body } = {}) {
     try {
       if (path === '/session' && method === 'POST') {
-        const user = await login(body.email, body.password, true);
+        const user = await login(body.identifier || body.email, body.password, true);
         return { token: user.id, admin: { id: user.id, name: user.nombre, email: user.correo } };
       }
       if (path === '/session' && method === 'DELETE') { await logout(); return null; }

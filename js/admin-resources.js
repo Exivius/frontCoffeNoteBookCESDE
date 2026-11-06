@@ -1,8 +1,8 @@
 const field = (key, label, type = "text", options = {}) => ({ key, label, type, ...options });
 const personFields = [field("name", "Nombre", "text", { max: 100 }), field("lastName", "Apellido", "text", { optional: true, max: 100 }),
-  field("email", "Correo electrónico", "email", { max: 150 }), field("phone", "Teléfono", "tel", { optional: true, max: 20 }),
+  field("username", "Nombre de usuario", "text", { max: 150 }), field("email", "Correo electrónico", "email", { max: 150 }), field("phone", "Teléfono", "tel", { optional: true, max: 20 }),
   field("password", "Contraseña", "password", { max: 255 }), field("state", "Estado", "select", { values: ["Activo", "Inactivo"] })];
-const personColumns = [["id", "ID"], ["name", "Nombre"], ["lastName", "Apellido"], ["email", "Correo"], ["state", "Estado"]];
+const personColumns = [["id", "ID"], ["name", "Nombre"], ["username", "Usuario"], ["lastName", "Apellido"], ["email", "Correo"], ["state", "Estado"]];
 export const resources = {
   users: { deactivate: true, title: "Usuarios", singular: "usuario", icon: "♙", description: "Las personas que le dan vida a la cafetería.", id: "id", fields: [...personFields, field("city", "Ciudad", "text", { optional: true, max: 100 })], columns: personColumns },
   admins: { deactivate: true, title: "Administradores", singular: "administrador", icon: "◇", description: "Organiza las cuentas de tu equipo.", id: "id", fields: [...personFields, field("area", "Área", "text", { optional: true, max: 100 })], columns: [...personColumns, ["area", "Área"]] },

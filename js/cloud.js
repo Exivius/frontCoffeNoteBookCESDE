@@ -1,6 +1,7 @@
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
 import { getAuth, setPersistence, browserSessionPersistence, inMemoryPersistence, createUserWithEmailAndPassword,
   signInWithEmailAndPassword, signOut, deleteUser, updatePassword } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-functions.js';
 import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where,
   runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
 import { firebaseConfig } from './firebase-config.js';
@@ -8,6 +9,7 @@ import { firebaseConfig } from './firebase-config.js';
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+const functions = getFunctions(app, 'us-central1');
 export const ready = setPersistence(auth, browserSessionPersistence).then(() => auth.authStateReady());
 let cartWrites = Promise.resolve();
 const usernameKey = name => encodeURIComponent(name.trim().toLowerCase());
@@ -17,6 +19,7 @@ function validateProfile(data) {
       throw new Error('Completa el nombre, el usuario y la sede con datos válidos.');
     }
   }
+  if (data.nombreDeUsuario.includes('@')) throw new Error('El nombre de usuario no debe incluir @; usa tu correo en ese campo para ingresar con correo.');
 }
 export function cloudError(error) {
   const messages = {
@@ -27,6 +30,9 @@ export function cloudError(error) {
     'auth/too-many-requests': 'Hay demasiados intentos. Espera unos minutos e intenta de nuevo.',
     'auth/requires-recent-login': 'Vuelve a iniciar sesión antes de cambiar tu contraseña.',
     'auth/network-request-failed': 'No se pudo conectar con Firebase. Revisa tu conexión.',
+    'functions/not-found': 'El acceso por nombre de usuario todavía no está disponible. Puedes ingresar con tu correo.',
+    'functions/unavailable': 'No se pudo validar el usuario. Intenta de nuevo.',
+    'functions/unauthenticated': 'Usuario o contraseña incorrectos.',
     'permission-denied': 'No tienes permiso para esta operación. Revisa tu sesión.',
     'unavailable': 'No se pudo conectar con la base de datos. Intenta de nuevo.',
   };
@@ -51,9 +57,21 @@ export async function profile() {
   return record.data();
 }
 
-export async function login(email, password, admin = false) {
+export async function login(identifier, password, admin = false) {
   await ready;
-  await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+  const loginIdentifier = identifier.trim();
+  // Los correos se validan directamente; el nombre de usuario se resuelve en una función privada
+  // para no publicar los correos de las cuentas dentro de Firestore.
+  if (loginIdentifier.includes('@')) {
+    await signInWithEmailAndPassword(auth, loginIdentifier.toLowerCase(), password);
+  } else {
+    const resolveUsername = httpsCallable(functions, 'loginWithUsername');
+    const { data } = await resolveUsername({ username: loginIdentifier, password });
+    if (typeof data?.email !== 'string' || !data.email) {
+      throw new Error('No se pudo iniciar sesión con ese usuario.');
+    }
+    await signInWithEmailAndPassword(auth, data.email.toLowerCase(), password);
+  }
   const user = await profile();
   if (admin && user?.rol !== 'Admin') {
     await signOut(auth);
@@ -248,7 +266,7 @@ export async function adminRecords(resource) {
   const entity = { users: 'users', admins: 'users', products: 'products', places: 'places', orders: 'orders', payments: 'orders', 'payment-methods': 'paymentMethods' }[resource];
   if (!entity) throw new Error('Sección no disponible.');
   const rows = (await getDocs(collection(db, entity))).docs.map(record => ({ ...record.data(), _docId: record.id }));
-  if (resource === 'users' || resource === 'admins') return rows.filter(row => row.rol === (resource === 'admins' ? 'Admin' : 'User')).map(row => ({ ...row, name: row.nombre, email: row.correo, city: row.direccion }));
+  if (resource === 'users' || resource === 'admins') return rows.filter(row => row.rol === (resource === 'admins' ? 'Admin' : 'User')).map(row => ({ ...row, name: row.nombre, username: row.nombreDeUsuario, email: row.correo, city: row.direccion }));
   if (resource === 'products') return rows.map(row => ({ ...row, productId: row.identificacion, productName: row.nombre, productPrice: row.precio, productType: row.categoria, description: row.descripcion }));
   if (resource === 'orders') return rows.map(row => ({ ...row, orderId: row.ordenId, userId: row.nombreCliente, placeId: row.sedeRecogida, items: row.listaDeProductos.map(item => ({ product: { productName: item.producto.nombre }, quantity: item.cantidad })) }));
   if (resource === 'payments') return rows.map(row => ({ paymentId: row.ordenId, orderId: row.ordenId, paymentType: row.metodoDePago === 'contra entrega' ? 'Pendiente al recoger' : 'Pago registrado', methodId: /nequi/i.test(row.metodoDePago) ? 'Nequi' : row.metodoDePago, amount: row.total }));
@@ -267,10 +285,31 @@ export async function adminWrite(resource, method, id, data) {
     }
     if (method === 'PUT') {
       if (data.password) throw new Error('Cada persona cambia su contraseña desde su perfil.');
-      const current = (await getDoc(doc(db, 'users', id))).data();
+      const userRef = doc(db, 'users', id);
+      const currentSnapshot = await getDoc(userRef);
+      if (!currentSnapshot.exists()) throw new Error('No se encontró la cuenta que quieres modificar.');
+      const current = currentSnapshot.data();
       if (data.email !== current.correo) throw new Error('El correo de acceso no se modifica desde este panel.');
       if (id === admin.id && data.state !== 'Activo') throw new Error('No puedes desactivar tu propia cuenta.');
-      await updateDoc(doc(db, 'users', id), { nombre: data.name, lastName: data.lastName || '', phone: data.phone || '', direccion: data.city || current.direccion, area: data.area || '', state: data.state });
+      const username = typeof data.username === 'string' ? data.username.trim() : '';
+      if (!username || username.includes('@')) throw new Error('Escribe un nombre de usuario sin @.');
+      const oldUsernameRef = doc(db, 'usernames', usernameKey(current.nombreDeUsuario));
+      const newUsernameRef = doc(db, 'usernames', usernameKey(username));
+      await runTransaction(db, async transaction => {
+        const existingUsername = await transaction.get(newUsernameRef);
+        if (newUsernameRef.path !== oldUsernameRef.path) {
+          const oldUsername = await transaction.get(oldUsernameRef);
+          if (existingUsername.exists() && existingUsername.data().uid !== id) {
+            throw new Error('Ese nombre de usuario ya está registrado.');
+          }
+          if (!oldUsername.exists() || oldUsername.data().uid !== id) {
+            throw new Error('No se encontró la reserva del nombre de usuario actual.');
+          }
+          transaction.delete(oldUsernameRef);
+          transaction.set(newUsernameRef, { uid: id });
+        }
+        transaction.update(userRef, { nombre: data.name, nombreDeUsuario: username, lastName: data.lastName || '', phone: data.phone || '', direccion: data.city || current.direccion, area: data.area || '', state: data.state });
+      });
       return;
     }
     const secondary = initializeApp(firebaseConfig, 'create-user-' + crypto.randomUUID());
@@ -279,11 +318,17 @@ export async function adminWrite(resource, method, id, data) {
     let credential;
     try {
       if (!data.password || data.password.length < 8) throw new Error('Usa una contraseña de al menos 8 caracteres.');
+      const username = typeof data.username === 'string' ? data.username.trim() : '';
+      if (!username || username.includes('@')) throw new Error('Escribe un nombre de usuario sin @.');
       credential = await createUserWithEmailAndPassword(secondaryAuth, data.email, data.password);
       const uid = credential.user.uid;
-      const user = { id: uid, nombre: data.name, lastName: data.lastName || '', correo: data.email.toLowerCase(), phone: data.phone || '', direccion: data.city || 'Centro', nombreDeUsuario: uid, rol: resource === 'admins' ? 'Admin' : 'User', state: data.state || 'Activo', area: data.area || '' };
-      await setDoc(doc(db, 'users', uid), user);
-      await setDoc(doc(db, 'usernames', uid), { uid });
+      const user = { id: uid, nombre: data.name, lastName: data.lastName || '', correo: data.email.toLowerCase(), phone: data.phone || '', direccion: data.city || 'Centro', nombreDeUsuario: username, rol: resource === 'admins' ? 'Admin' : 'User', state: data.state || 'Activo', area: data.area || '' };
+      await runTransaction(db, async transaction => {
+        const usernameRef = doc(db, 'usernames', usernameKey(username));
+        if ((await transaction.get(usernameRef)).exists()) throw new Error('Ese nombre de usuario ya está registrado.');
+        transaction.set(doc(db, 'users', uid), user);
+        transaction.set(usernameRef, { uid });
+      });
     } catch (error) {
       if (credential) await deleteUser(credential.user).catch(() => {});
       throw error;

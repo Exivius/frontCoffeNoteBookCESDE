@@ -5,6 +5,7 @@ import pathlib
 import secrets
 import subprocess
 import urllib.error
+import urllib.parse
 import urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -56,7 +57,8 @@ for entity, records in seed.items():
 print('Catálogo, sedes y métodos preparados; se conservaron los registros existentes.', flush=True)
 
 credentials_file = pathlib.Path.home() / '.config' / 'notebook-coffee' / 'administrador.json'
-email = 'admin@notebookcoffee.example'
+email = 'admin@admin.com'
+username = 'admin'
 accounts = f'https://identitytoolkit.googleapis.com/v1/projects/{PROJECT}/accounts'
 lookup = request(accounts + ':lookup', 'POST', {'email': [email]})
 if lookup.get('users'):
@@ -70,14 +72,40 @@ else:
     with os.fdopen(descriptor, 'w') as stream:
         json.dump({'email': email, 'password': password, 'url': 'https://notebook-coffee-1793855157.web.app/admin-login.html'}, stream, indent=2)
     print('Credenciales iniciales guardadas fuera del repositorio:', credentials_file, flush=True)
+profile_url = documents + 'users/' + uid
+# Mantiene el acceso del administrador de práctica en Authentication y Firestore bajo el usuario `admin`.
+user = {'id': uid, 'nombre': 'Administración Notebook Coffee', 'correo': email, 'nombreDeUsuario': username,
+        'direccion': 'Centro', 'rol': 'Admin', 'state': 'Activo', 'area': 'Administración'}
+username_url = documents + 'usernames/' + urllib.parse.quote(username, safe='')
 try:
-    request(documents + 'users/' + uid)
+    username_record = request(username_url)
+    if username_record.get('fields', {}).get('uid', {}).get('stringValue') != uid:
+        raise RuntimeError('El nombre de usuario admin ya pertenece a otra cuenta.')
 except RuntimeError as error:
     if 'HTTP 404' not in str(error): raise
-    user = {'id': uid, 'nombre': 'Administración Notebook Coffee', 'correo': email, 'nombreDeUsuario': uid,
-            'direccion': 'Centro', 'rol': 'Admin', 'state': 'Activo', 'area': 'Administración'}
-    request(documents + 'users/' + uid, 'PATCH', {'fields': {key: value(item) for key, item in user.items()}})
-    request(documents + 'usernames/' + uid, 'PATCH', {'fields': {'uid': value(uid)}})
+    username_record = None
+
+try:
+    profile = request(profile_url)
+    old_username = profile.get('fields', {}).get('nombreDeUsuario', {}).get('stringValue')
+    update_mask = urllib.parse.urlencode([('updateMask.fieldPaths', key) for key in user])
+    request(profile_url + '?' + update_mask, 'PATCH', {'fields': {key: value(item) for key, item in user.items()}})
+except RuntimeError as error:
+    if 'HTTP 404' not in str(error): raise
+    old_username = None
+    request(profile_url, 'PATCH', {'fields': {key: value(item) for key, item in user.items()}})
+
+if username_record is None:
+    request(username_url, 'PATCH', {'fields': {'uid': value(uid)}})
+
+if old_username and old_username.lower() != username:
+    old_url = documents + 'usernames/' + urllib.parse.quote(old_username.strip().lower(), safe='')
+    try:
+        old_record = request(old_url)
+        if old_record.get('fields', {}).get('uid', {}).get('stringValue') == uid:
+            request(old_url, 'DELETE')
+    except RuntimeError as error:
+        if 'HTTP 404' not in str(error): raise
 
 base = 'https://firebaserules.googleapis.com/v1/projects/' + PROJECT
 ruleset = request(base + '/rulesets', 'POST', {'source': {'files': [{'name': 'firestore.rules', 'content': (ROOT / 'firestore.rules').read_text()}]}})

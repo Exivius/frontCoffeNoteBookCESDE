@@ -20,7 +20,7 @@ form.addEventListener("submit", async (event) => {
   try {
     const apiUrl = getApiUrl();
     const data = await new AdminApi(apiUrl).request("/session", { method: "POST", body: {
-      email: form.elements.email.value.trim(), password: form.elements.password.value,
+      identifier: form.elements.identifier.value.trim(), password: form.elements.password.value,
     } });
     if (typeof data?.token !== "string" || !data.token || !data.admin?.id || !data.admin?.email) {
       throw new Error("El servicio no devolvió una sesión de administrador válida.");
