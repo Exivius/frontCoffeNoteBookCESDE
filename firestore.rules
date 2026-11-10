@@ -1,6 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Permisos aplicados en Firebase; ocultar controles en la página no protege los datos.
     function signed() { return request.auth != null; }
     function active() { return signed() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.state == 'Activo'; }
     function admin() { return active() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'Admin'; }
@@ -11,6 +12,7 @@ service cloud.firestore {
         && data.direccion is string && data.direccion.size() > 0 && data.direccion.size() <= 150
         && data.correo is string && data.id is string && data.state in ['Activo', 'Inactivo'] && data.rol in ['User', 'Admin'];
     }
+    // Cada usuario consulta su perfil; el administrador puede gestionar las cuentas.
     match /users/{uid} {
       allow get: if own(uid) || admin();
       allow list: if admin();
@@ -27,6 +29,7 @@ service cloud.firestore {
       allow create: if signed() && request.resource.data.keys().hasOnly(['uid']) && (request.resource.data.uid == request.auth.uid || admin());
       allow delete: if signed() && (resource.data.uid == request.auth.uid || admin());
     }
+    // El carrito es privado por usuario; el stock se valida nuevamente al crear la orden.
     match /carts/{uid} {
       allow get: if own(uid) && active();
       allow create, update: if own(uid) && active() && request.resource.data.keys().hasOnly(['items'])
@@ -75,6 +78,7 @@ service cloud.firestore {
           + lineTotal(items,3) + lineTotal(items,4) + lineTotal(items,5)
           + lineTotal(items,6) + lineTotal(items,7) + lineTotal(items,8);
     }
+    // La orden comprueba propiedad, productos, precios, sede y cambios de stock.
     match /orders/{id} {
       allow get: if active() && (resource == null || resource.data.clienteId == request.auth.uid || admin());
       allow list: if active() && (resource.data.clienteId == request.auth.uid || admin());

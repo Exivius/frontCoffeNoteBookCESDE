@@ -1,3 +1,4 @@
+// Preferencias visuales y sonido; si el navegador limita el almacenamiento, la página sigue funcionando.
 const clave = 'coffeeSoundEnabled';
 let sonido = true;
 try { sonido = localStorage.getItem(clave) !== 'false'; } catch { /* Preferencia de esta página. */ }

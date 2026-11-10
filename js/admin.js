@@ -1,3 +1,4 @@
+// Coordina navegación, carga y edición de las secciones administrativas.
 import { AdminApi, SESSION_KEY, readSession, showNotice } from "./admin-api.js";
 import { resources, recordValue, formPayload } from "./admin-resources.js";
 

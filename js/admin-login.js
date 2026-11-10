@@ -1,3 +1,4 @@
+// Valida la sesión administrativa y la conserva solo mientras esta pestaña está abierta.
 import { AdminApi, API_URL_KEY, SESSION_KEY, getApiUrl, normalizeApiUrl, readSession, showNotice } from "./admin-api.js";
 
 const form = document.querySelector("#adminLoginForm");

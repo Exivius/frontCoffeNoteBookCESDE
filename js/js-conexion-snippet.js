@@ -1,6 +1,6 @@
-/*
+/* Ejemplo de integración conservado como referencia; la aplicación activa usa app.js y cloud.js.
   Snippet de conexión para el estudiante.
-  Se carga al final de pago.html y orden.html para conectar el flujo de compra.
+  No se carga en las páginas actuales; se conserva como ejemplo didáctico anterior.
 */
 
 // 1. Inyectar el usuario guardado después del login.

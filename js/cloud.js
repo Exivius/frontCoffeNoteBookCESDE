@@ -1,3 +1,4 @@
+// Punto de acceso a Authentication y Firestore; app.js usa estas funciones para hablar con Firebase.
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
 import { getAuth, setPersistence, browserSessionPersistence, inMemoryPersistence, createUserWithEmailAndPassword,
   signInWithEmailAndPassword, signOut, deleteUser, updatePassword } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
@@ -199,6 +200,7 @@ export async function saveProfile(data, password = '') {
 }
 
 export async function createOrder(draft) {
+  // La transacción vuelve a comprobar carrito, precios y stock antes de descontar existencias.
   await cartWrites;
   const user = await profile();
   if (!user) throw new Error('Inicia sesión para confirmar la compra.');

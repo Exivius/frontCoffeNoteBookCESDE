@@ -1,4 +1,5 @@
-"""Configura reglas, datos iniciales y primer administrador con la sesión de gcloud."""
+"""Utilidad manual para reglas, datos iniciales y administrador mediante gcloud."""
+# Modifica recursos remotos de Firebase; no forma parte del flujo normal de la web.
 import json
 import os
 import pathlib

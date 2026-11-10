@@ -1,3 +1,4 @@
+// Configuración compartida para dibujar formularios y tablas sin duplicar pantallas.
 const field = (key, label, type = "text", options = {}) => ({ key, label, type, ...options });
 const personFields = [field("name", "Nombre", "text", { max: 100 }), field("lastName", "Apellido", "text", { optional: true, max: 100 }),
   field("username", "Nombre de usuario", "text", { max: 150 }), field("email", "Correo electrónico", "email", { max: 150 }), field("phone", "Teléfono", "tel", { optional: true, max: 20 }),

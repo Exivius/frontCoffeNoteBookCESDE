@@ -1,3 +1,4 @@
+/* Ajustes visuales exclusivos del acceso y panel de administración. */
 .admin-auth { margin-top: 48px; margin-bottom: 48px; }
 .admin-auth .auth-copy h1 { font-size: clamp(2rem, 4vw, 3.3rem); }
 .admin-auth-visual { background: linear-gradient(150deg, rgba(51,37,30,.1), rgba(51,37,30,.9)), url('../images/breakfast.png') center/cover, #69584e; }

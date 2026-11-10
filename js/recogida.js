@@ -1,6 +1,7 @@
 import qrcode from './vendor/qrcode-generator.mjs';
 import { PUBLIC_SITE_URL } from './publicacion.js';
 
+// Genera el QR de recogida con el resumen necesario, sin incluir credenciales.
 const imagenes = { breakfast: './images/breakfast.png', lunch: './images/lunch.png', dinner: './images/dinner.png' };
 
 function mensajePago(pedido) {

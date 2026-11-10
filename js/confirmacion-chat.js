@@ -1,3 +1,4 @@
+// Maneja la confirmación de hora de recogida y la guarda en el historial de la orden.
 import { saveConfirmation, cloudError } from './cloud.js';
 // Conversación del pedido persistida en Firebase; no conecta con WhatsApp.
 export function configurarChatRecogida(orden, usuario) {

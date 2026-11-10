@@ -1,3 +1,4 @@
+// Función opcional para resolver el usuario sin publicar los correos en Firestore.
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 

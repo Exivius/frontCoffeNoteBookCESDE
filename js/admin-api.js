@@ -1,3 +1,4 @@
+// Adapta las acciones del panel a las funciones de autenticación y Firestore.
 import { login, logout, auth, adminRecords, adminWrite, cloudError } from './cloud.js';
 
 export const DEFAULT_API_URL = 'Firebase';

@@ -1,3 +1,4 @@
+// Clases del dominio que representan productos, carrito, órdenes y perfiles.
 export default class Producto {
     #identificacion;
     #nombre;
