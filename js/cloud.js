@@ -1,4 +1,5 @@
 // Punto de acceso a Authentication y Firestore; app.js usa estas funciones para hablar con Firebase.
+// async permite usar await: el navegador espera la respuesta sin congelar la página.
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
 import { getAuth, setPersistence, browserSessionPersistence, inMemoryPersistence, createUserWithEmailAndPassword,
   signInWithEmailAndPassword, signOut, deleteUser, updatePassword } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
@@ -8,13 +9,17 @@ import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, dele
 import { firebaseConfig } from './firebase-config.js';
 
 const app = initializeApp(firebaseConfig);
+// auth gestiona cuentas y sesiones; db permite leer y escribir documentos de Firestore.
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 const functions = getFunctions(app, 'us-central1');
+// Espera a que Firebase recupere la sesión antes de consultar el usuario en cada página.
 export const ready = setPersistence(auth, browserSessionPersistence).then(() => auth.authStateReady());
+// Encadena guardados del carrito para que varias acciones rápidas no se pisen entre sí.
 let cartWrites = Promise.resolve();
 const usernameKey = name => encodeURIComponent(name.trim().toLowerCase());
 function validateProfile(data) {
+  // Revisa los campos mínimos antes de enviar el perfil a Firestore.
   for (const key of ['nombre', 'nombreDeUsuario', 'direccion']) {
     if (typeof data[key] !== 'string' || !data[key].trim() || data[key].length > 150) {
       throw new Error('Completa el nombre, el usuario y la sede con datos válidos.');
@@ -23,6 +28,7 @@ function validateProfile(data) {
   if (data.nombreDeUsuario.includes('@')) throw new Error('El nombre de usuario no debe incluir @; usa tu correo en ese campo para ingresar con correo.');
 }
 export function cloudError(error) {
+  // Traduce códigos técnicos de Firebase a mensajes que la interfaz puede mostrar en español.
   const messages = {
     'auth/invalid-credential': 'Correo o contraseña incorrectos.',
     'auth/email-already-in-use': 'El correo ya está registrado. Inicia sesión con tu cuenta.',
@@ -47,6 +53,7 @@ function cacheProfile(profile) {
 }
 
 export async function profile() {
+  // async/await permite esperar la respuesta de Firebase antes de seguir; aquí también se valida que la cuenta siga activa.
   await ready;
   if (!auth.currentUser) return null;
   const record = await getDoc(doc(db, 'users', auth.currentUser.uid));
@@ -59,13 +66,17 @@ export async function profile() {
 }
 
 export async function login(identifier, password, admin = false) {
+  // Primero autentica la cuenta; después carga su perfil y, si el panel lo solicita, comprueba el rol.
   await ready;
   const loginIdentifier = identifier.trim();
   // Los correos se validan directamente; el nombre de usuario se resuelve en una función privada
   // para no publicar los correos de las cuentas dentro de Firestore.
   if (loginIdentifier.includes('@')) {
+    // Firebase Authentication inicia sesión directamente con el correo.
     await signInWithEmailAndPassword(auth, loginIdentifier.toLowerCase(), password);
   } else {
+    // El backend busca el correo asociado al usuario y Authentication valida la contraseña.
+    // Esta ruta requiere que loginWithUsername esté desplegada en Firebase.
     const resolveUsername = httpsCallable(functions, 'loginWithUsername');
     const { data } = await resolveUsername({ username: loginIdentifier, password });
     if (typeof data?.email !== 'string' || !data.email) {
@@ -84,6 +95,7 @@ export async function login(identifier, password, admin = false) {
 }
 
 export async function logout() {
+  // Cierra la sesión de Firebase y limpia las copias temporales usadas por la interfaz.
   await signOut(auth);
   sessionStorage.removeItem('usuarioActual');
   sessionStorage.removeItem('coffeeAdminSession');
@@ -92,15 +104,18 @@ export async function logout() {
 }
 
 export async function register(data, password) {
+  // Authentication guarda la contraseña; Firestore guarda el perfil y reserva el nombre de usuario.
   validateProfile(data);
   if (typeof password !== 'string' || password.length < 8) throw new Error('Usa una contraseña de al menos 8 caracteres.');
   await ready;
   const credential = await createUserWithEmailAndPassword(auth, data.correo, password);
+  // Firebase genera un UID estable que vincula la cuenta con su perfil en Firestore.
   const id = credential.user.uid;
   const user = { id, nombre: data.nombre, correo: data.correo, direccion: data.direccion,
     nombreDeUsuario: data.nombreDeUsuario, rol: 'User', state: 'Activo' };
   try {
     await runTransaction(db, async transaction => {
+      // La transacción evita que dos registros reclamen el mismo nombre al mismo tiempo.
       const username = doc(db, 'usernames', usernameKey(user.nombreDeUsuario));
       if ((await transaction.get(username)).exists()) throw new Error('El nombre de usuario ya está registrado.');
       transaction.set(doc(db, 'users', id), user);
@@ -114,6 +129,7 @@ export async function register(data, password) {
 }
 
 export async function refreshProducts() {
+  // Firestore es el origen de los productos; localStorage guarda una copia para dibujar la página.
   const records = await getDocs(collection(db, 'products'));
   const products = records.docs.map(record => record.data());
   localStorage.setItem('productos', JSON.stringify(products));
@@ -121,6 +137,7 @@ export async function refreshProducts() {
 }
 
 export async function refreshOrders() {
+  // La consulta filtra por el UID autenticado, así el historial corresponde a esta cuenta.
   if (!auth.currentUser) return [];
   const records = await getDocs(query(collection(db, 'orders'), where('clienteId', '==', auth.currentUser.uid)));
   const orders = records.docs.map(record => record.data()).sort((a, b) => a.dia.localeCompare(b.dia));
@@ -132,6 +149,7 @@ export async function refreshCart() {
   if (!auth.currentUser) return;
   const snapshot = await getDoc(doc(db, 'carts', auth.currentUser.uid));
   const products = JSON.parse(localStorage.getItem('productos') || '[]');
+  // Se completan los artículos guardados con el nombre, precio y stock actuales del catálogo.
   const items = (snapshot.exists() ? snapshot.data().items : []).map(item => ({
     ...item, producto: products.find(product => product.identificacion === item.producto.identificacion) || item.producto,
   }));
@@ -139,6 +157,7 @@ export async function refreshCart() {
 }
 
 export function saveCart(cart) {
+  // Guarda solo los artículos de esta cuenta; la cola mantiene el orden de los guardados.
   if (!auth.currentUser) return Promise.reject(new Error('Inicia sesión para guardar tu carrito.'));
   const uid = auth.currentUser.uid;
   const items = JSON.parse(JSON.stringify(cart.listaDeProductos));
@@ -148,6 +167,7 @@ export function saveCart(cart) {
 }
 
 export async function initializeCloud() {
+  // Preparación común que ejecuta app.js al abrir una página: sesión, sedes y datos necesarios.
   await ready;
   const user = await profile();
   if (user) cacheProfile(user);
@@ -178,6 +198,7 @@ export async function initializeCloud() {
 }
 
 export async function saveProfile(data, password = '') {
+  // Cambia el perfil y reserva el nuevo usuario; si cambió el usuario, libera el nombre anterior.
   validateProfile(data);
   const current = await profile();
   if (!current) throw new Error('Inicia sesión para modificar tus datos.');
@@ -200,7 +221,7 @@ export async function saveProfile(data, password = '') {
 }
 
 export async function createOrder(draft) {
-  // La transacción vuelve a comprobar carrito, precios y stock antes de descontar existencias.
+  // Una transacción agrupa lecturas y escrituras: si una validación falla, no se guarda la orden ni se descuenta stock.
   await cartWrites;
   const user = await profile();
   if (!user) throw new Error('Inicia sesión para confirmar la compra.');
@@ -210,14 +231,17 @@ export async function createOrder(draft) {
   let saved;
   await runTransaction(db, async transaction => {
     const orderRef = doc(db, 'orders', orderId);
+    // Evita crear dos veces la misma orden si se repite el envío del formulario.
     if ((await transaction.get(orderRef)).exists()) throw new Error('Esta compra ya fue registrada.');
     const cartRef = doc(db, 'carts', user.id);
     const savedCart = await transaction.get(cartRef);
     const signature = values => JSON.stringify(values.map(item => [item.producto.identificacion, item.cantidad]).sort((a, b) => a[0].localeCompare(b[0])));
+    // Compara productos y cantidades sin depender del orden en que aparecen en la lista.
     if (!savedCart.exists() || signature(savedCart.data().items) !== signature(items)) {
       throw new Error('Tu carrito cambió en otro dispositivo. Revísalo antes de confirmar el pago.');
     }
     const snapshots = await Promise.all(items.map(item => transaction.get(doc(db, 'products', String(item.producto.identificacion)))));
+    // Antes de escribir, revisa que cada producto exista y que precio y stock sigan vigentes.
     const quantities = {};
     const detail = snapshots.map((snapshot, index) => {
       const product = snapshot.data();
@@ -234,6 +258,7 @@ export async function createOrder(draft) {
       listaDeProductos: detail, cantidadPorProducto: quantities,
       total: detail.reduce((sum, item) => sum + item.producto.precio * item.cantidad, 0),
       historialChat: [], confirmacionRecogida: null, createdAt: serverTimestamp() };
+    // Firestore confirma estos cambios como un conjunto; si falla la operación, no queda media compra guardada.
     snapshots.forEach((snapshot, index) => transaction.update(snapshot.ref, {
       stock: snapshot.data().stock - detail[index].cantidad, lastOrderId: orderId,
     }));
@@ -247,6 +272,7 @@ export async function createOrder(draft) {
 }
 
 export async function saveConfirmation(orderId, confirmation) {
+  // Añade la respuesta del cliente al historial de esa orden, después de comprobar que le pertenece.
   if (!auth.currentUser) throw new Error('Tu sesión terminó. Inicia sesión de nuevo.');
   let result;
   await runTransaction(db, async transaction => {
@@ -263,6 +289,7 @@ export async function saveConfirmation(orderId, confirmation) {
 }
 
 export async function adminRecords(resource) {
+  // El panel solicita registros aquí; las reglas de Firestore vuelven a comprobar el permiso de administrador.
   const user = await profile();
   if (user?.rol !== 'Admin') throw new Error('Se requiere una cuenta de administrador.');
   const entity = { users: 'users', admins: 'users', products: 'products', places: 'places', orders: 'orders', payments: 'orders', 'payment-methods': 'paymentMethods' }[resource];
@@ -276,6 +303,7 @@ export async function adminRecords(resource) {
 }
 
 export async function adminWrite(resource, method, id, data) {
+  // Centraliza altas, cambios y bajas administrativas para no duplicar las operaciones de base de datos en la pantalla.
   const admin = await profile();
   if (admin?.rol !== 'Admin') throw new Error('Se requiere una cuenta de administrador.');
   if (['orders', 'payments'].includes(resource)) throw new Error('Los pedidos y pagos son de consulta.');

@@ -1,5 +1,6 @@
 // Flujo académico local: no solicita datos bancarios ni utiliza APIs de Nequi.
 export function configurarSimulacionNequi(obtenerCarrito, formatoMoneda) {
+  // Flujo visual para practicar el checkout: valida el importe, pero nunca consulta ni cobra una cuenta Nequi.
   const panel = document.querySelector('#nequiDemo');
   const estadoVisible = document.querySelector('#nequiStatus');
   const acciones = document.querySelector('#nequiActions');

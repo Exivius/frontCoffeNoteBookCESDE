@@ -46,6 +46,7 @@ if not configuration.get('signIn', {}).get('email', {}).get('enabled'):
     raise RuntimeError('Activa Correo/contraseña en Firebase Authentication antes de continuar.')
 
 seed = json.loads((ROOT / 'database' / 'seed.json').read_text())
+# Los documentos de catálogo se crean solo cuando faltan para conservar datos existentes.
 for entity, records in seed.items():
     for record in records:
         identifier = record.get('identificacion') or record.get('placeId') or record.get('methodId')

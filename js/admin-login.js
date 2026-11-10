@@ -19,6 +19,7 @@ form.addEventListener("submit", async (event) => {
   submit.textContent = "Ingresando…";
   showNotice(notice, "");
   try {
+    // La autenticación y la comprobación del rol ocurren en cloud.js.
     const apiUrl = getApiUrl();
     const data = await new AdminApi(apiUrl).request("/session", { method: "POST", body: {
       identifier: form.elements.identifier.value.trim(), password: form.elements.password.value,

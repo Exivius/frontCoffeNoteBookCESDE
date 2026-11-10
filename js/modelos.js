@@ -1,5 +1,6 @@
 // Clases del dominio que representan productos, carrito, órdenes y perfiles.
 export default class Producto {
+    // Los campos privados (#) solo se pueden modificar desde la clase; los getters permiten consultarlos.
     #identificacion;
     #nombre;
     #descripcion;
@@ -42,6 +43,7 @@ export default class Producto {
     }
 }
 
+// Cada categoría hereda identificación, nombre, precio y stock, y añade sus datos específicos.
 export class Desayuno extends Producto {
     constructor(identificacion, nombre, descripcion, precio, stock, huevosPreparados, tipoDePan, tipoDeLeche, incluyeFruta) {
         super(identificacion, nombre, descripcion, precio, stock);
@@ -104,6 +106,7 @@ export class Cena extends Producto {
 }
 
 export class CarroDeCompras {
+    // El carrito agrupa productos y cantidades; su total se calcula a partir de esos datos.
     constructor(carroDeComprasId, listaDeProductos = null, total = 0) {
         this.carroDeComprasId = carroDeComprasId;
         this.listaDeProductos = listaDeProductos ??
@@ -152,6 +155,7 @@ export class CarroDeCompras {
     }
 
     calcularTotal() {
+        // reduce recorre las líneas y acumula precio × cantidad para obtener el total del carrito.
         this.total = this.listaDeProductos.reduce(
             (acc, item) => acc + item.producto.precio * item.cantidad,
             0
@@ -166,6 +170,7 @@ export class CarroDeCompras {
 }
 
 export class MetodoDePago {
+    // Modelo descriptivo del método y estado; el flujo web no procesa cobros reales.
     constructor(metodoDePagoId, metodoDePago, carroDeComprasId) {
         this.metodoDePagoId = metodoDePagoId;
         this.metodoDePago = metodoDePago;
@@ -179,6 +184,7 @@ export class MetodoDePago {
 }
 
 export class Orden {
+    // Representa una compra confirmada con su cliente, artículos, total y fecha.
     constructor(clienteId, listaDeProductos, total, dia, estado, pagoId) {
         this.ordenId = `ORD-${Date.now()}`;
         this.clienteId = clienteId;
@@ -203,6 +209,7 @@ export class Orden {
 }
 
 export class Cliente {
+    // Modelo legado: no implementa el acceso; el flujo actual delega las cuentas en Firebase Authentication.
     constructor({id = null, nombre, correo, direccion, contrasena, nombreDeUsuario}) {
         this.id = id;
         this.nombre = nombre;

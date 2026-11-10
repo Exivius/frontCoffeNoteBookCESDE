@@ -10,6 +10,11 @@ import Producto, {
   Orden,
 } from "./modelos.js";
 
+/*
+ * Controlador de las páginas: busca elementos del HTML, responde a clics y formularios,
+ * y delega en cloud.js las lecturas y escrituras de Firebase. Como este archivo se carga
+ * en varias páginas, cada configurar... primero verifica si existe su formulario o sección.
+ */
 //claves o tablas de la BD simulada
 const CLAVES = {
   usuarios: "usuarios",
@@ -47,6 +52,7 @@ const usuarioActivo = () => {
 const pagina = () => window.location.pathname.split("/").pop() || "index.html";
 
 function protegerPaginas() {
+  // Esta comprobación mejora la navegación; las reglas de Firestore siguen protegiendo los datos.
   const paginasProtegidas = [
     "catalogo.html",
     "carrito.html",
@@ -64,6 +70,7 @@ function protegerPaginas() {
 
 //Convertidos los productos ya guardados en el tipo de clase al que corresponden en modelos.js
 function crearProductos(datos) {
+  // Firestore entrega objetos simples. Aquí se convierten en clases para reutilizar su comportamiento.
   if (datos.categoria === "Desayuno") {
     return new Desayuno(
       datos.identificacion,
@@ -116,6 +123,7 @@ function obtenerProductos() {
 
 //Dado que existen varios usuarios, es necesario obtener el carrito especifico ligado al usuario que esta logueado
 function obtenerCarrito() {
+  // El ID de usuario forma parte de la clave para que dos cuentas no compartan el carrito local.
   const usuarioActual = JSON.parse(
     sessionStorage.getItem("usuarioActual") || "null",
   );
@@ -151,6 +159,7 @@ function mostrarAdvertencia(texto, id) {
 // pintar usuario en la cabecera
 
 function configurarRegistro() {
+  // El formulario solo recoge campos; cloud.register valida y crea la cuenta y el perfil remoto.
   const formulario = document.querySelector('#registerForm');
   if (!formulario) return;
   formulario.querySelector('button[type="submit"]').disabled = false;
@@ -173,6 +182,7 @@ function configurarRegistro() {
 }
 
 function configurarLogin() {
+  // Tras un registro reciente se precargan las credenciales por unos minutos y el usuario confirma el ingreso.
   const formulario = document.querySelector('#loginForm');
   if (!formulario) return;
   formulario.querySelector('button[type="submit"]').disabled = false;
@@ -212,6 +222,7 @@ function configurarLogin() {
 }
 
 function cargarTarjetas() {
+  // Dibuja el catálogo y conecta los controles de cantidad con el carrito de la cuenta actual.
   const lista = document.querySelector("#productList");
   if (!lista) return;
   const productos = obtenerProductos();
@@ -397,6 +408,7 @@ function configurarCabecera() {
 }
 
 function configurarCarrito() {
+    // Construye el resumen del carrito y conecta cambios de cantidad, eliminación y continuación al pago.
     const tabla = document.querySelector('#cartItems');
 
     // Como app.js se carga en todas las páginas, solo continuamos
@@ -763,6 +775,7 @@ function configurarCarrito() {
 }
 
 function realizarPago() {
+  // Revisa el método elegido y crea una orden; la simulación de pago no realiza cobros reales.
   //Obtenemos usuatio activo, el carrito asignado a ese cliente
   const usuario = usuarioActivo();
   if (!usuario) return;
@@ -889,6 +902,7 @@ function fechaOrden(fecha) {
 }
 // Selecciona las compras del usuario y organiza la pantalla.
 function configurarHistorial() {
+    // Carga las órdenes del usuario y permite abrir una compra concreta desde su historial.
     const tabla = document.querySelector('#orderItems');
     const usuario = usuarioActivo();
     // Solo trabaja en orden.html y con sesión iniciada.
@@ -921,6 +935,7 @@ function configurarHistorial() {
 }
 // Llena los espacios que ya existen en orden.html.
 function mostrarDetalleOrden(orden, usuario) {
+    // Presenta los datos guardados de una orden: sede, productos, cantidades y conversación de recogida.
     // El ID sigue guardado para identificar al comprador, pero no se muestra.
     document.querySelector('#orderCustomerId').hidden = true;
     const metodo = orden.metodoDePago === 'contra entrega'
@@ -1045,6 +1060,7 @@ function mostrarHistorial(ordenes) {
 }
 // Carga los datos del usuario y conecta el formulario para guardar sus cambios.
 function actualizarPerfil() {
+    // Aquí se editan nombre, usuario, sede y contraseña; el correo de la cuenta no se cambia desde este formulario.
   const formulario = document.querySelector('#profileForm');
   const usuario = usuarioActivo();
   if (!formulario || !usuario) return;

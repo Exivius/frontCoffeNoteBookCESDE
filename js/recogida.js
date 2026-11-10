@@ -12,6 +12,7 @@ function mensajePago(pedido) {
 }
 
 function codificarPedido(pedido) {
+  // El QR lleva una versión compacta del resumen para poder leerlo sin consultar credenciales.
   const compactado = {
     v: 2,
     m: pedido.metodo,
@@ -39,6 +40,7 @@ function decodificarPedido(datos) {
 
 // El QR comparte el nombre y la sede solicitados, sin correo, credenciales ni sesión.
 export function mostrarQrRecogida(orden) {
+  // Prepara el resumen visual y genera el QR con la librería incluida en vendor.
   let nombreDueno = '';
   try {
     const usuario = JSON.parse(sessionStorage.getItem('usuarioActual') || 'null');

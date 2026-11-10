@@ -7,6 +7,7 @@ if (!session) window.location.replace("admin-login.html");
 else initialize(session);
 
 function initialize(session) {
+  // La sesión válida habilita el panel; el contenido de cada sección se carga desde admin-api.js.
   const $ = (selector) => document.querySelector(selector);
   const api = new AdminApi(session.apiUrl, session.token);
   const nav = $("#resourceNav");
@@ -59,6 +60,7 @@ function initialize(session) {
   }
 
   async function load() {
+    // El número de secuencia evita que una respuesta lenta de una sección reemplace a la sección recién elegida.
     const sequence = ++loadSequence;
     const resource = current;
     $("#connectionStatus").textContent = "Consultando servicio…";

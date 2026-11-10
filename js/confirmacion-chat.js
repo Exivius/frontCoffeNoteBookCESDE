@@ -2,6 +2,7 @@
 import { saveConfirmation, cloudError } from './cloud.js';
 // Conversación del pedido persistida en Firebase; no conecta con WhatsApp.
 export function configurarChatRecogida(orden, usuario) {
+  // Presenta mensajes locales de la compra y guarda la respuesta de hora en la orden.
   const ventana = document.querySelector('#orderChatWindow');
   const formulario = document.querySelector('#pickupReplyForm');
   const fecha = document.querySelector('#pickupTime');

@@ -11,6 +11,7 @@ export class ApiError extends Error {
 }
 
 export class AdminApi {
+  // Ofrece al panel una interfaz sencilla para consultar Firestore y traducir errores.
   async request(path, { method = 'GET', body } = {}) {
     try {
       if (path === '/session' && method === 'POST') {

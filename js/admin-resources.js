@@ -5,6 +5,7 @@ const personFields = [field("name", "Nombre", "text", { max: 100 }), field("last
   field("password", "Contraseña", "password", { max: 255 }), field("state", "Estado", "select", { values: ["Activo", "Inactivo"] })];
 const personColumns = [["id", "ID"], ["name", "Nombre"], ["username", "Usuario"], ["lastName", "Apellido"], ["email", "Correo"], ["state", "Estado"]];
 export const resources = {
+  // Cada sección declara sus campos y columnas; admin.js usa esta configuración para generar la interfaz.
   users: { deactivate: true, title: "Usuarios", singular: "usuario", icon: "♙", description: "Las personas que le dan vida a la cafetería.", id: "id", fields: [...personFields, field("city", "Ciudad", "text", { optional: true, max: 100 })], columns: personColumns },
   admins: { deactivate: true, title: "Administradores", singular: "administrador", icon: "◇", description: "Organiza las cuentas de tu equipo.", id: "id", fields: [...personFields, field("area", "Área", "text", { optional: true, max: 100 })], columns: [...personColumns, ["area", "Área"]] },
   places: { title: "Sedes", singular: "sede", icon: "⌂", description: "Cada punto de encuentro, en un solo lugar.", id: "placeId", fields: [field("placeName", "Nombre de la sede", "text", { max: 100 }), field("placeType", "Tipo de sede", "text", { max: 100, placeholder: "Punto de Venta o Punto de Entrega" })], columns: [["placeId", "ID"], ["placeName", "Nombre"], ["placeType", "Tipo"]] },
@@ -15,6 +16,7 @@ export const resources = {
 };
 
 export function recordValue(record, key) {
+  // Algunos campos vienen anidados en Firestore; aquí se extraen para mostrarlos como columnas.
   if (record[key] !== undefined && record[key] !== null) return record[key];
   if (key === "userId") return record.user?.id;
   if (key === "placeId") return record.place?.placeId;
@@ -26,6 +28,7 @@ export function recordValue(record, key) {
 }
 
 export function formPayload(form, config, editing) {
+  // Convierte las entradas del formulario a números o texto antes de guardar.
   const payload = {};
   for (const item of config.fields) {
     const raw = form.elements[item.key].value;
